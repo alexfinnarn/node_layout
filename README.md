@@ -8,3 +8,10 @@ In Drupal 7, I was able to have a layout per node that I could edit via "node/%/
 
 # Drupal 7 Screenshots
 
+Node View 
+
+![screen shot 2017-11-08 at 3 51 38 pm](https://user-images.githubusercontent.com/3640707/32579110-f9814810-c49c-11e7-8bd7-91e27c05c7d3.png)
+
+Editing A Layout
+
+![screen shot 2017-11-08 at 3 54 02 pm](https://user-images.githubusercontent.com/3640707/32579144-1ad5214e-c49d-11e7-9afd-400a73a317bb.png)

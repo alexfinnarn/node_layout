@@ -1,0 +1,114 @@
+<?php
+
+/**
+ * @file
+ * Hooks for node_layout module.
+ */
+
+/**
+ * Implements hook_entity_info().
+ */
+function node_layout_entity_info() {
+  $info['node_layout'] = array(
+    'label' => t('Node Layout'),
+    'base table' => 'node_layout',
+    'entity class' => 'NodeLayoutEntity',
+    'controller class' => 'NodeLayoutEntityController',
+    'entity keys' => array(
+      'id' => 'rid',
+    ),
+    'fieldable' => FALSE,
+    'uuid' => FALSE,
+  );
+
+  return $info;
+}
+
+/**
+ * Implements hook_autoload_info().
+ */
+function node_layout_autoload_info() {
+  return array(
+    'NodeLayoutEntity' => 'src/entity/node_layout.entity.inc',
+    'NodeLayoutEntityController' => 'src/entity/node_layout.entity.inc',
+    'NodeLayoutEntityControllerInterface' => 'src/entity/node_layout.entity.inc',
+  );
+}
+
+/**
+ * Implements hook_menu().
+ */
+function node_layout_menu() {
+  $items = array();
+
+  $items['node/%/layout'] = array(
+    'title' => 'Edit Layout',
+    'description' => 'Edit Node Layout',
+    'page callback' => 'backdrop_get_form',
+    'page arguments' => array('node_layout_edit_form'),
+    'access arguments' => array('edit node layouts'),
+    'file' => 'node_layout.admin.inc',
+  );
+
+  return $items;
+}
+
+/**
+ * Implements hook_block_info().
+ */
+function node_layout_block_info() {
+  $blocks = array();
+  $regions = array(
+    'one',
+    'two',
+    'three',
+  );
+
+  foreach ($regions as $region) {
+    $blocks["node_layout_$region"] = array(
+      'info' => "Node Layout Block: $region",
+      'description' => t('The hierarchical list...'),
+      //    'cache' => BACKDROP_NO_CACHE,
+    );
+  }
+
+  return $blocks;
+}
+
+/**
+ * Implements hook_block_view().
+ */
+function node_layout_block_view($delta = '', $settings = array()) {
+
+  if (strpos($delta, 'node_layout') !== -1) {
+    $layout = _get_layout();
+
+
+    $foo = 'bar';
+
+    $block['subject'] = $data['subject'];
+    $block['content'] = $data['content'];
+  }
+}
+
+/**
+ * Implements hook_block_configure().
+ */
+function node_layout_block_configure($delta, $settings) {
+  if ($delta === 'node_layout') {
+    $form = array();
+
+    return $form;
+  }
+}
+
+function _get_layout() {
+  $layout = &backdrop_static(__FUNCTION__);
+
+  if ($layout === NULL) {
+    $node = menu_get_object('node');
+    $layout = db_query('SELECT * FROM {node_layout} WHERE nid = :nid', array(':nid' => $node->nid))->fetchAllAssoc();
+  }
+
+  return $layout;
+}

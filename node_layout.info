@@ -1,0 +1,5 @@
+name = Node Layout
+description = Provides a layout with the ability of placing pageless content into regions.
+package = Layout
+backdrop = 1.x
+type = module

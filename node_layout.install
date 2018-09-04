@@ -1,0 +1,53 @@
+<?php
+
+/**
+ * @file
+ * Install hooks for the node_layout module.
+ */
+
+/**
+ * Implements hook_schema().
+ */
+function node_layout_schema() {
+  $schema['node_layout'] = array(
+    'description' => 'Node layouts',
+    'fields' => array(
+      'id'  => array(
+        'type' => 'serial',
+        'not null' => TRUE,
+        'description' => 'primary Key: unique id.',
+      ),
+      'nid' => array(
+        'type' => 'int',
+        'not null' => TRUE,
+        'description' => 'Node ID that the layout belongs to.',
+      ),
+      'data' => array(
+        'description' => 'Layout data.',
+        'type' => 'blob',
+        'not null' => TRUE,
+        'size' => 'big',
+      ),
+    ),
+    'primary key' => array('id'),
+  );
+
+  $schema['node_layout_references'] = array(
+    'description' => 'Keeps track of content attached to layouts.',
+    'fields' => array(
+      'cid' => array(
+        'type' => 'int',
+        'not null' => TRUE,
+        'description' => 'ID of content.',
+      ),
+      'lid' => array(
+        'type' => 'int',
+        'not null' => TRUE,
+        'description' => 'ID layout attached to.',
+      ),
+    ),
+    'primary key' => array('cid'),
+  );
+
+  return $schema;
+}

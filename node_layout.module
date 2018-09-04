@@ -58,11 +58,7 @@ function node_layout_menu() {
  */
 function node_layout_block_info() {
   $blocks = array();
-  $regions = array(
-    'one',
-    'two',
-    'three',
-  );
+  $regions = node_layout_get_active_regions();
 
   foreach ($regions as $region) {
     $blocks["node_layout_$region"] = array(
@@ -111,4 +107,14 @@ function _get_layout() {
   }
 
   return $layout;
+}
+
+function node_layout_get_active_regions() {
+  $regions = array(
+    'one',
+    'two',
+    'three',
+  );
+
+  return $regions;
 }

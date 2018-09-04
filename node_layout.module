@@ -15,7 +15,7 @@ function node_layout_entity_info() {
     'entity class' => 'NodeLayoutEntity',
     'controller class' => 'NodeLayoutEntityController',
     'entity keys' => array(
-      'id' => 'rid',
+      'id' => 'id',
     ),
     'fieldable' => FALSE,
     'uuid' => FALSE,
@@ -42,12 +42,19 @@ function node_layout_menu() {
   $items = array();
 
   $items['node/%/layout'] = array(
-    'title' => 'Edit Layout',
+    'title' => 'Layout',
     'description' => 'Edit Node Layout',
     'page callback' => 'backdrop_get_form',
     'page arguments' => array('node_layout_edit_form'),
     'access arguments' => array('edit node layouts'),
     'file' => 'node_layout.admin.inc',
+    'type' => MENU_LOCAL_TASK,
+  );
+
+  $items['node_layout_titles/autocomplete'] = array(
+    'page callback' => '_node_layout_title_autocomplete',
+    'access arguments' => 'access content',
+    'type' => MENU_CALLBACK,
   );
 
   return $items;
@@ -117,4 +124,38 @@ function node_layout_get_active_regions() {
   );
 
   return $regions;
+}
+
+/**
+ * We save the entity by calling the controller.
+ */
+function node_layout_save(&$entity) {
+  return entity_get_controller('node_layout')->save($entity);
+}
+
+/**
+ * Return suggestions for path autocomplete.
+ *
+ * @param string $search
+ *   The search result.
+ */
+function _node_layout_title_autocomplete($search) {
+  $matches = array();
+
+  // Query node table based on titles.
+  $query = db_select('node', 'n');
+//  $query->join('node_type', 'nt', 'n.type = nt.type');
+
+  $results = $query->fields('n')
+    ->fields('n', array('title'))
+    ->condition('n.title', '%' . db_like($search) . '%', 'LIKE')
+    ->range(0, 10)
+    ->execute();
+
+  // Add results to JSON output. "Node path" => "node type: node title (node ID)".
+  foreach ($results as $result) {
+    $matches['node/' . $result->nid] = check_plain($result->type . ': ' . $result->title . ' (' . $result->nid . ')');
+  }
+
+  backdrop_json_output($matches);
 }

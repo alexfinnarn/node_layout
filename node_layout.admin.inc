@@ -13,64 +13,91 @@
  */
 function node_layout_edit_form($form = array(), &$form_state) {
 
+  $nid = explode('/', current_path())[1];
+  $form_state['values']['nid'] = $nid;
+
+  $layout_id = db_query('SELECT id FROM {node_layout} WHERE nid = :nid', array(':nid' => $nid))->fetchField();
+
+  if ($layout_id) {
+    $layout = entity_load('node_layout', $layout_id);
+  }
+
+  $foo = 'bar';
+
   // We will have many fields with the same name, so we need to be able to
   // access the form hierarchically.
   $form['#tree'] = TRUE;
 
   // Create block.
-  $form['add_block'] = array(
-
-  );
+  $form['add_block'] = array();
 
   // Boxes for each region.
   $regions = node_layout_get_active_regions();
+  $form['regions'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('Regions:'),
+    '#collapsible' => FALSE,
+  );
 
   foreach ($regions as $region) {
-    $form["region_$region"] =  array(
+    $form['regions'][$region] = array(
       '#type' => 'fieldset',
       '#title' => t('Region: @region', array('@region' => $region)),
       '#collapsible' => TRUE,
       '#collapsed' => FALSE,
     );
-    $form["region_$region"]['first'] = array(
+    $form['regions'][$region]['reference'] = array(
       '#type' => 'textfield',
-      '#title' => t('First name'),
-      '#description' => t("Enter first name."),
-      '#size' => 20,
-      '#maxlength' => 20,
-      '#required' => TRUE,
+      '#title' => t('Reference'),
+      '#description' => t('Enter the box you want to add to the region.'),
+      '#autocomplete_path' => 'node_layout_titles/autocomplete',
+//      '#size' => 20,
+//      '#maxlength' => 20,
+      //      '#required' => TRUE,
     );
+
+    // Adds "Add another name" button.
+//    $form['add_name'] = array(
+//      '#type' => 'submit',
+//      '#value' => t('Add another name'),
+//      '#submit' => array('form_example_tutorial_9_add_name'),
+//    );
+    // If we have more than one name, this button allows removal of the
+    // last name.
+//    if ($form_state['num_names'] > 1) {
+//      $form['remove_name'] = array(
+//        '#type' => 'submit',
+//        '#value' => t('Remove latest name'),
+//        '#submit' => array('form_example_tutorial_9_remove_name'),
+//        // Since we are removing a name, don't validate until later.
+//        '#limit_validation_errors' => array(),
+//      );
+//    }
   }
 
-
-  // Build the number of name fieldsets indicated by $form_state['num_names']
-  for ($i = 1; $i <= $form_state['num_names']; $i++) {
-
-
-  }
-  $form['submit'] = array(
-    '#type' => 'submit',
-    '#value' => 'Submit',
-  );
-  // Adds "Add another name" button.
-  $form['add_name'] = array(
-    '#type' => 'submit',
-    '#value' => t('Add another name'),
-    '#submit' => array('form_example_tutorial_9_add_name'),
-  );
-  // If we have more than one name, this button allows removal of the
-  // last name.
-  if ($form_state['num_names'] > 1) {
-    $form['remove_name'] = array(
+    $form['submit'] = array(
       '#type' => 'submit',
-      '#value' => t('Remove latest name'),
-      '#submit' => array('form_example_tutorial_9_remove_name'),
-      // Since we are removing a name, don't validate until later.
-      '#limit_validation_errors' => array(),
+      '#value' => 'Submit',
     );
-  }
 
-  return $form;
+    return $form;
+
+}
+
+function node_layout_edit_form_submit(&$form, &$form_state) {
+  $values = array();
+
+  $values['nid'] = $form_state['values']['nid'];
+  $values['layout'] = $form_state['values']['regions'];
+
+  $entity = entity_create('node_layout', $values);
+
+  $foo = 'bar';
+  try {
+    $entity->save();
+  } catch (EntityStorageException $e) {
+    watchdog('node_layout', $e->getMessage());
+  }
 }
 
 function form_example_tutorial_9_add_name($form, &$form_state) {

@@ -44,13 +44,33 @@ function node_layout_menu() {
   $items['node/%/layout'] = array(
     'title' => 'Edit Layout',
     'description' => 'Edit Node Layout',
-    'page callback' => 'backdrop_get_form',
+    'page callback' => 'node_layout_page',
     'page arguments' => array('node_layout_edit_form'),
     'access arguments' => array('edit node layouts'),
-    'file' => 'node_layout.admin.inc',
+//    'file' => 'node_layout.admin.inc',
   );
 
   return $items;
+}
+
+
+function node_layout_page() {
+  return '<foop>Foop</foop>';
+}
+
+/**
+ * Implements hook_preprocess_page().
+ */
+function node_layout_preprocess_page(&$variables) {
+
+  // Development.
+  backdrop_add_js('https://cdn.jsdelivr.net/npm/vue/dist/vue.js', 'external');
+
+  // Production.
+//  backdrop_add_js('https://cdn.jsdelivr.net/npm/vue', 'external');
+
+  backdrop_add_js(backdrop_get_path('module', 'node_layout')
+    . '/src/components');
 }
 
 /**

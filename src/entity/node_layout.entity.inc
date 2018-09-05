@@ -100,8 +100,8 @@ class NodeLayoutEntityController
     // See https://github.com/backdrop/backdrop-issues/issues/2558
     $entity = new NodeLayoutEntity();
     $entity->id = NULL;
-    $entity->nid = $values['node']->nid;
-    $entity->target = serialize($values['layout']);
+    $entity->nid = $values['nid'];
+    $entity->data = serialize($values['layout']);
     return $entity;
   }
 
@@ -127,7 +127,7 @@ class NodeLayoutEntityController
       // Save to the database and fire relevant hooks.
       if (!empty($node_layout->id)) {
 
-        backdrop_write_record('node_layout', $node_layout, array('rid'));
+        backdrop_write_record('node_layout', $node_layout, array('id'));
         // Invoke hook_entity_update() on other modules.
         module_invoke_all('entity_update', $node_layout, 'node_layout');
       }

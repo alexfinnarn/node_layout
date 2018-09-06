@@ -57,7 +57,7 @@ function node_layout_menu() {
     'type' => MENU_CALLBACK,
   );
 
-  $items['admin/config/content/express-layout'] = array(
+  $items['admin/config/content/node-layout'] = array(
     'title' => 'Node Layout Settings',
     'description' => 'Configuration options for the Node Layout module',
     'page callback' => 'drupal_get_form',

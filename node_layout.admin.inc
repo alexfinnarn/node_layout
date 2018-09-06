@@ -14,6 +14,7 @@
 function node_layout_edit_form($form = array(), &$form_state) {
 
   $nid = explode('/', current_path())[1];
+  $node = node_load($nid);
   $form_state['values']['nid'] = $nid;
 
   $layout_id = db_query('SELECT id FROM {node_layout} WHERE nid = :nid', array(':nid' => $nid))->fetchField();
@@ -21,8 +22,6 @@ function node_layout_edit_form($form = array(), &$form_state) {
   if ($layout_id) {
     $layout = entity_load('node_layout', $layout_id);
   }
-
-  $foo = 'bar';
 
   // We will have many fields with the same name, so we need to be able to
   // access the form hierarchically.
@@ -32,7 +31,7 @@ function node_layout_edit_form($form = array(), &$form_state) {
   $form['add_block'] = array();
 
   // Boxes for each region.
-  $regions = node_layout_get_active_regions();
+  $regions = node_layout_get_active_regions($node->type);
   $form['regions'] = array(
     '#type' => 'fieldset',
     '#title' => t('Regions:'),
@@ -51,48 +50,29 @@ function node_layout_edit_form($form = array(), &$form_state) {
       '#title' => t('Reference'),
       '#description' => t('Enter the box you want to add to the region.'),
       '#autocomplete_path' => 'node_layout_titles/autocomplete',
-//      '#size' => 20,
-//      '#maxlength' => 20,
-      //      '#required' => TRUE,
     );
-
-    // Adds "Add another name" button.
-//    $form['add_name'] = array(
-//      '#type' => 'submit',
-//      '#value' => t('Add another name'),
-//      '#submit' => array('form_example_tutorial_9_add_name'),
-//    );
-    // If we have more than one name, this button allows removal of the
-    // last name.
-//    if ($form_state['num_names'] > 1) {
-//      $form['remove_name'] = array(
-//        '#type' => 'submit',
-//        '#value' => t('Remove latest name'),
-//        '#submit' => array('form_example_tutorial_9_remove_name'),
-//        // Since we are removing a name, don't validate until later.
-//        '#limit_validation_errors' => array(),
-//      );
-//    }
   }
 
-    $form['submit'] = array(
-      '#type' => 'submit',
-      '#value' => 'Submit',
-    );
+  $form['submit'] = array(
+    '#type' => 'submit',
+    '#value' => 'Submit',
+  );
 
-    return $form;
-
+  return $form;
 }
 
 function node_layout_edit_form_submit(&$form, &$form_state) {
-  $values = array();
+  if (isset($form_state['_layout'])) {
+    $entity = entity_load('node_layout', $form_state['_layout']->id);
+    $entity->data = serialize($form_state['values']['regions']);
+  }
+  else {
+    $values = array();
+    $values['nid'] = $form_state['_nid'];
+    $values['layout'] = $form_state['values']['regions'];
+    $entity = entity_create('node_layout', $values);
+  }
 
-  $values['nid'] = $form_state['values']['nid'];
-  $values['layout'] = $form_state['values']['regions'];
-
-  $entity = entity_create('node_layout', $values);
-
-  $foo = 'bar';
   try {
     $entity->save();
   } catch (EntityStorageException $e) {
@@ -100,27 +80,58 @@ function node_layout_edit_form_submit(&$form, &$form_state) {
   }
 }
 
-function form_example_tutorial_9_add_name($form, &$form_state) {
-  // Everything in $form_state is persistent, so we'll just use
-  // $form_state['add_name']
-  $form_state['num_names']++;
-  // Setting $form_state['rebuild'] = TRUE causes the form to be rebuilt again.
-  $form_state['rebuild'] = TRUE;
-}
 
-function form_example_tutorial_9_remove_name($form, &$form_state) {
-  if ($form_state['num_names'] > 1) {
-    $form_state['num_names']--;
+function node_layout_settings_form($form = array(), &$form_state) {
+  $form['#config'] = 'node_layout.settings';
+  $config = config_get('node_layout.settings');
+
+  // Get all node types excluding pageless ones.
+  $available_node_types = array_filter(node_type_get_types(), function ($val) {
+    return $val->settings['hidden_path'] === FALSE;
+  });
+
+  if (!$available_node_types) {
+    return 'No available node types to select from.';
   }
-  // Setting $form_state['rebuild'] = TRUE causes the form to be rebuilt again.
-  $form_state['rebuild'] = TRUE;
-}
 
-function form_example_tutorial_9_validate($form, &$form_state) {
-  for ($i = 1; $i <= $form_state['num_names']; $i++) {
-    $year_of_birth = $form_state['values']['name'][$i]['year_of_birth'];
-    if ($year_of_birth && ($year_of_birth < 1900 || $year_of_birth > 2000)) {
-      form_set_error("name][$i][year_of_birth", t('Enter a year between 1900 and 2000.'));
+  $form['node_types'] = array(
+    '#type' => 'fieldset',
+    '#title' => 'Available Node Types',
+    '#description' => 'Select node types to configure settings for them.'
+  );
+
+  $form['node_types']['available_node_types'] = array(
+    '#type' => 'checkboxes',
+    '#options' => array_combine(
+      array_keys($available_node_types),
+      array_keys($available_node_types)
+    ),
+    '#default_value' => $config['available_node_types'],
+  );
+
+  // Get the node layout.
+  $node_layout = layout_load('default');
+
+  // Get the template associated with the node layout.
+  // the template has the regions that can be selected.
+  $template = layout_get_layout_template_info($node_layout->layout_template);
+  $template_regions = $template['regions'];
+
+  foreach ($config['available_node_types'] as $type) {
+    if ($type === 0) {
+      continue;
     }
+
+    $form[$type] = array(
+      '#type' => 'fieldset',
+      '#title' => $type,
+    );
+    $form[$type][$type . '_regions'] = array(
+      '#type' => 'checkboxes',
+      '#options' => $template_regions,
+      '#default_value' => $config[$type . '_regions'],
+    );
   }
+
+  return system_settings_form($form);
 }

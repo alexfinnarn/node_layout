@@ -57,6 +57,17 @@ function node_layout_menu() {
     'type' => MENU_CALLBACK,
   );
 
+  $items['admin/config/content/node-layout'] = array(
+    'title' => 'Node Layout Settings',
+    'description' => 'Configuration options for the Node Layout module',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('node_layout_settings_form'),
+    'access arguments' => array('administer node layout'),
+    'type' => MENU_NORMAL_ITEM,
+    'weight' => 0,
+    'file' => 'node_layout.admin.inc',
+  );
+
   return $items;
 }
 
@@ -83,54 +94,96 @@ function node_layout_block_info() {
  */
 function node_layout_block_view($delta = '', $settings = array()) {
 
-  if (strpos($delta, 'node_layout') !== -1) {
+  $item = menu_get_item();
+  if (strpos($delta, 'node_layout') !== -1 && $item['path'] === 'node/%') {
     $layout = _get_layout();
 
+    if ($layout->regions) {
+      switch ($delta) {
+        case 'node_layout_header':
+          $nid = explode('/', $layout->regions['header']['reference'])[1];
+          if ($nid) {
+            $block['content'] = node_view(node_load($nid));
+            $block['subject'] = 'header block';
+            return $block;
+          }
 
-    $foo = 'bar';
+          break;
+        case 'node_layout_sidebar':
+          $nid = explode('/', $layout->regions['sidebar']['reference'])[1];
+          if ($nid) {
+            $block['content'] = node_view(node_load($nid));
+            $block['subject'] = 'sidebar block';
+            return $block;
+          }
 
-    $block['subject'] = $data['subject'];
-    $block['content'] = $data['content'];
+          break;
+        case 'node_layout_bottom':
+          $nid = explode('/', $layout->regions['bottom']['reference'])[1];
+          if ($nid) {
+            $block['content'] = node_view(node_load($nid));
+            $block['subject'] = 'bottom block';
+            return $block;
+          }
+
+          break;
+      }
+    }
   }
 }
 
 /**
- * Implements hook_block_configure().
+ * Gets the layout for the node in question.
+ *
+ * @return array|bool|mixed|null
  */
-function node_layout_block_configure($delta, $settings) {
-  if ($delta === 'node_layout') {
-    $form = array();
-
-    return $form;
-  }
-}
-
 function _get_layout() {
   $layout = &backdrop_static(__FUNCTION__);
 
   if ($layout === NULL) {
     $node = menu_get_object('node');
-    $layout = db_query('SELECT * FROM {node_layout} WHERE nid = :nid', array(':nid' => $node->nid))->fetchAllAssoc();
+    $layout = db_query('SELECT * FROM {node_layout} WHERE nid = :nid', array(':nid' => $node->nid))->fetch();
+    $layout->regions = unserialize($layout->data);
   }
 
   return $layout;
 }
 
-function node_layout_get_active_regions() {
-  $regions = array(
-    'one',
-    'two',
-    'three',
-  );
+/**
+ * Gets active regions the layout tool can use.
+ *
+ * @return array
+ */
+function node_layout_get_active_regions(string $node_type) {
+  // Get the node layout.
+  $node_layout = layout_load('default');
+
+  // Get the template associated with the node layout.
+  // the template has the regions that can be selected.
+  $template = layout_get_layout_template_info($node_layout->layout_template);
+  $template_regions = $template['regions'];
+
+  // Return regions available for node type.
+  $node_types = array_filter(config_get('node_layout.settings', 'available_node_types'), function($type) {
+    return $type !== 0;
+  });
+
+  $regions = [];
+
+  if () {
+
+  }
 
   return $regions;
 }
 
-/**
- * We save the entity by calling the controller.
- */
-function node_layout_save(&$entity) {
-  return entity_get_controller('node_layout')->save($entity);
+function node_layout_get_available_node_types() {
+  $config = config_get('node_layout.settings');
+  return $config['available_node_types'];
+}
+
+function node_layout_get_template() {
+
 }
 
 /**
@@ -144,7 +197,6 @@ function _node_layout_title_autocomplete($search) {
 
   // Query node table based on titles.
   $query = db_select('node', 'n');
-//  $query->join('node_type', 'nt', 'n.type = nt.type');
 
   $results = $query->fields('n')
     ->fields('n', array('title'))

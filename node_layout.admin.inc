@@ -16,18 +16,40 @@ function node_layout_edit_form($form = array(), &$form_state) {
   $nid = explode('/', current_path())[1];
   $node = node_load($nid);
   $form_state['_nid'] = $nid;
-
   $layout = node_layout_get_layout($nid);
-
-  // We will have many fields with the same name, so we need to be able to
-  // access the form hierarchically.
-  $form['#tree'] = TRUE;
-
-  // Create block.
-  $form['add_block'] = array();
 
   // Boxes for each region.
   $regions = node_layout_get_active_regions($node->type);
+
+  // We will have many fields with the same name, so we need to be able to
+  // access the form hierarchically.
+  //  $form['#tree'] = TRUE;
+
+  // Create block.
+  $form['add_block'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('Add Block'),
+    '#collapsible' => FALSE,
+  );
+
+  $form['add_block']['selected_reference'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Reference'),
+    '#description' => t('Enter the box you want to add to the region.'),
+    '#autocomplete_path' => 'node_layout_titles/autocomplete',
+  );
+
+  $form['add_block']['selected_region'] = array(
+    '#type' => 'select',
+    '#options' => $regions,
+  );
+
+  $form['add_block']['add_button'] = array(
+    '#type' => 'submit',
+    '#value' => t('Add'),
+    '#weight' => 19,
+    '#submit' => array('edit_layout_add_block'),
+  );
 
   $form['regions'] = array(
     '#type' => 'fieldset',
@@ -35,22 +57,33 @@ function node_layout_edit_form($form = array(), &$form_state) {
     '#collapsible' => FALSE,
   );
 
-  foreach ($regions as $region) {
-    $form['regions'][$region] = array(
-      '#type' => 'fieldset',
-      '#title' => t('Region: @region', array('@region' => $region)),
-      '#collapsible' => TRUE,
-      '#collapsed' => FALSE,
-    );
+  $data = array(
+    'layout' => $layout,
+    'regions' => "['". implode("','", array_values($regions)). "']",
+  );
 
-    $form['regions'][$region]['reference'] = array(
-      '#type' => 'textfield',
-      '#title' => t('Reference'),
-      '#description' => t('Enter the box you want to add to the region.'),
-      '#autocomplete_path' => 'node_layout_titles/autocomplete',
-      '#default_value' => isset($layout->regions[$region]) ? $layout->regions[$region]['reference'] : '',
-    );
-  }
+  $form['regions']['vue_form'] = array(
+//    '#markup' => file_get_contents(backdrop_get_path('module', 'node_layout'). '/templates/edit_layout.tpl.php'),
+//    '#markup' => '<div>Foo</div>',
+    '#markup' => theme('node_layout_edit_layout', array('data' => $data)),
+  );
+
+//  foreach ($regions as $region) {
+//    $form['regions'][$region] = array(
+//      '#type' => 'fieldset',
+//      '#title' => t('Region: @region', array('@region' => $region)),
+//      '#collapsible' => TRUE,
+//      '#collapsed' => FALSE,
+//    );
+//
+//    $form['regions'][$region]['reference'] = array(
+//      '#type' => 'textfield',
+//      '#title' => t('Reference'),
+//      '#description' => t('Enter the box you want to add to the region.'),
+//      '#autocomplete_path' => 'node_layout_titles/autocomplete',
+//      '#default_value' => isset($layout->regions[$region]) ? $layout->regions[$region]['reference'] : '',
+//    );
+//  }
 
   $form['submit'] = array(
     '#type' => 'submit',
@@ -60,6 +93,9 @@ function node_layout_edit_form($form = array(), &$form_state) {
   return $form;
 }
 
+function edit_layout_add_block(&$form, &$form_state) {
+  $foo = 'bar';
+}
 
 function node_layout_edit_form_submit(&$form, &$form_state) {
   if (isset($form_state['_layout'])) {
@@ -107,7 +143,7 @@ function node_layout_settings_form($form = array(), &$form_state) {
   $form['node_types'] = array(
     '#type' => 'fieldset',
     '#title' => 'Available Node Types',
-    '#description' => 'Select node types to configure settings for them.'
+    '#description' => 'Select node types to configure settings for them.',
   );
 
   $form['node_types']['available_node_types'] = array(

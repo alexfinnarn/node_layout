@@ -46,7 +46,8 @@ function node_layout_menu() {
     'description' => 'Edit Node Layout',
     'page callback' => 'backdrop_get_form',
     'page arguments' => array('node_layout_edit_form'),
-    'access arguments' => array('edit node layouts'),
+//    'access arguments' => array('edit node layouts'),
+    'access callback' => 'node_layout_edit_access_callback',
     'file' => 'node_layout.admin.inc',
     'type' => MENU_LOCAL_TASK,
   );
@@ -96,7 +97,8 @@ function node_layout_block_view($delta = '', $settings = array()) {
 
   $item = menu_get_item();
   if (strpos($delta, 'node_layout') !== -1 && $item['path'] === 'node/%') {
-    $layout = _get_layout();
+    $node = menu_get_object('node');
+    $layout = node_layout_get_layout($node->id);
 
     if ($layout->regions) {
       switch ($delta) {
@@ -137,12 +139,11 @@ function node_layout_block_view($delta = '', $settings = array()) {
  *
  * @return array|bool|mixed|null
  */
-function _get_layout() {
+function node_layout_get_layout($nid) {
   $layout = &backdrop_static(__FUNCTION__);
 
   if ($layout === NULL) {
-    $node = menu_get_object('node');
-    $layout = db_query('SELECT * FROM {node_layout} WHERE nid = :nid', array(':nid' => $node->nid))->fetch();
+    $layout = db_query('SELECT * FROM {node_layout} WHERE nid = :nid', array(':nid' => $nid))->fetch();
     $layout->regions = unserialize($layout->data);
   }
 
@@ -164,17 +165,29 @@ function node_layout_get_active_regions(string $node_type) {
   $template_regions = $template['regions'];
 
   // Return regions available for node type.
-  $node_types = array_filter(config_get('node_layout.settings', 'available_node_types'), function($type) {
-    return $type !== 0;
-  });
+//  $node_types = array_filter(config_get('node_layout.settings', 'available_node_types'), function($type) {
+//    return $type !== 0;
+//  });
 
-  $regions = [];
-
-  if () {
-
+  $config = config_get('node_layout.settings');
+  $region = $node_type. '_regions';
+  if (!isset($config[$region])) {
+    return [];
   }
 
-  return $regions;
+  return array_filter($config[$region], function($region) {
+    $foo = 'bar';
+    return $region !== 0;
+  });
+}
+
+function node_layout_is_type_available($type = '') {
+  if ($type === '') {
+    return NULL;
+  }
+
+  $config = config_get('node_layout.settings');
+  return in_array($type, array_values($config['available_node_types']), TRUE);
 }
 
 function node_layout_get_available_node_types() {

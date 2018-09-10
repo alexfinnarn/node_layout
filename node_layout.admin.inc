@@ -15,13 +15,9 @@ function node_layout_edit_form($form = array(), &$form_state) {
 
   $nid = explode('/', current_path())[1];
   $node = node_load($nid);
-  $form_state['values']['nid'] = $nid;
+  $form_state['_nid'] = $nid;
 
-  $layout_id = db_query('SELECT id FROM {node_layout} WHERE nid = :nid', array(':nid' => $nid))->fetchField();
-
-  if ($layout_id) {
-    $layout = entity_load('node_layout', $layout_id);
-  }
+  $layout = node_layout_get_layout($nid);
 
   // We will have many fields with the same name, so we need to be able to
   // access the form hierarchically.
@@ -32,6 +28,7 @@ function node_layout_edit_form($form = array(), &$form_state) {
 
   // Boxes for each region.
   $regions = node_layout_get_active_regions($node->type);
+
   $form['regions'] = array(
     '#type' => 'fieldset',
     '#title' => t('Regions:'),
@@ -45,11 +42,13 @@ function node_layout_edit_form($form = array(), &$form_state) {
       '#collapsible' => TRUE,
       '#collapsed' => FALSE,
     );
+
     $form['regions'][$region]['reference'] = array(
       '#type' => 'textfield',
       '#title' => t('Reference'),
       '#description' => t('Enter the box you want to add to the region.'),
       '#autocomplete_path' => 'node_layout_titles/autocomplete',
+      '#default_value' => isset($layout->regions[$region]) ? $layout->regions[$region]['reference'] : '',
     );
   }
 
@@ -60,6 +59,7 @@ function node_layout_edit_form($form = array(), &$form_state) {
 
   return $form;
 }
+
 
 function node_layout_edit_form_submit(&$form, &$form_state) {
   if (isset($form_state['_layout'])) {
@@ -77,6 +77,16 @@ function node_layout_edit_form_submit(&$form, &$form_state) {
     $entity->save();
   } catch (EntityStorageException $e) {
     watchdog('node_layout', $e->getMessage());
+  }
+}
+
+function node_layout_edit_access_callback() {
+  // @todo Add user access check.
+
+  $nid = explode('/', current_path())[1];
+  $node = node_load($nid);
+  if (isset($node->type)) {
+    return node_layout_is_type_available($node->type);
   }
 }
 

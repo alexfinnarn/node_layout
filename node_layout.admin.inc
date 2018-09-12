@@ -17,13 +17,10 @@ function node_layout_edit_form($form = array(), &$form_state) {
   $node = node_load($nid);
   $form_state['_nid'] = $nid;
   $layout = node_layout_get_layout($nid);
+  $form_state['_layout'] = $layout;
 
   // Boxes for each region.
   $regions = node_layout_get_active_regions($node->type);
-
-  // We will have many fields with the same name, so we need to be able to
-  // access the form hierarchically.
-  //  $form['#tree'] = TRUE;
 
   // Create block.
   $form['add_block'] = array(
@@ -57,33 +54,27 @@ function node_layout_edit_form($form = array(), &$form_state) {
     '#collapsible' => FALSE,
   );
 
+  backdrop_add_js('https://cdnjs.cloudflare.com/ajax/libs/vue/2.5.2/vue.min.js', 'external');
+  backdrop_add_js('https://cdn.jsdelivr.net/npm/sortablejs@1.7.0/Sortable.min.js', 'external');
+  backdrop_add_js('https://cdnjs.cloudflare.com/ajax/libs/Vue.Draggable/2.15.0/vuedraggable.min.js', 'external');
+
+  // backdrop_add_js(backdrop_get_path('module', 'node_layout'). '/js/edit_layout.js');
+
+  $foo = 'bar';
+
   $data = array(
+    'encoded_layout' => json_encode(unserialize($layout->data)),
     'layout' => $layout,
-    'regions' => "['". implode("','", array_values($regions)). "']",
   );
 
   $form['regions']['vue_form'] = array(
-//    '#markup' => file_get_contents(backdrop_get_path('module', 'node_layout'). '/templates/edit_layout.tpl.php'),
-//    '#markup' => '<div>Foo</div>',
     '#markup' => theme('node_layout_edit_layout', array('data' => $data)),
   );
 
-//  foreach ($regions as $region) {
-//    $form['regions'][$region] = array(
-//      '#type' => 'fieldset',
-//      '#title' => t('Region: @region', array('@region' => $region)),
-//      '#collapsible' => TRUE,
-//      '#collapsed' => FALSE,
-//    );
-//
-//    $form['regions'][$region]['reference'] = array(
-//      '#type' => 'textfield',
-//      '#title' => t('Reference'),
-//      '#description' => t('Enter the box you want to add to the region.'),
-//      '#autocomplete_path' => 'node_layout_titles/autocomplete',
-//      '#default_value' => isset($layout->regions[$region]) ? $layout->regions[$region]['reference'] : '',
-//    );
-//  }
+  $form['_final_layout'] = array(
+    '#type' => 'hidden',
+    '#default_value' => array(),
+  );
 
   $form['submit'] = array(
     '#type' => 'submit',
@@ -93,19 +84,28 @@ function node_layout_edit_form($form = array(), &$form_state) {
   return $form;
 }
 
-function edit_layout_add_block(&$form, &$form_state) {
-  $foo = 'bar';
-}
-
 function node_layout_edit_form_submit(&$form, &$form_state) {
+  $submitted_layout = json_decode($form_state['values']['_final_layout']);
+
+  // Remove other properties of references leaving only name.
+  $arr = (array) $submitted_layout->regions;
+
+  foreach(array_keys($arr) as $value) {
+
+    foreach($submitted_layout->regions->$value->references as $index => $value2) {
+      $foo = 'bar';
+      $submitted_layout->regions->$value->references[$index] = $value2->name;
+    }
+  }
+
   if (isset($form_state['_layout'])) {
     $entity = entity_load('node_layout', $form_state['_layout']->id);
-    $entity->data = serialize($form_state['values']['regions']);
+    $entity->data = serialize($submitted_layout);
   }
   else {
     $values = array();
     $values['nid'] = $form_state['_nid'];
-    $values['layout'] = $form_state['values']['regions'];
+    $values['layout'] = $submitted_layout;
     $entity = entity_create('node_layout', $values);
   }
 

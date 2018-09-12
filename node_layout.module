@@ -80,7 +80,7 @@ function node_layout_theme($existing, $type, $theme, $path) {
       'node_layout_edit_layout' => array(
         'variables' => array('data' => NULL),
         'template' => 'templates/edit_layout'
-      )
+      ),
     );
 }
 
@@ -105,28 +105,24 @@ function node_layout_block_info() {
 /**
  * Implements hook_preprocess_page().
  */
-function node_layout_preprocess_page(&$variables) {
-  // Add the JS and CSS assets if the page is supposed to have code syntax highlighting.
-  $nid = explode('/', current_path())[1];
-  $node = node_load($nid);
-  if ($node && node_layout_is_type_available($node->type)) {
+//function node_layout_preprocess_page(&$variables) {
+//  // Add the JS and CSS assets if the page is supposed to have code syntax highlighting.
+//  $nid = explode('/', current_path())[1];
+//  $node = node_load($nid);
+//  if ($node && node_layout_is_type_available($node->type)) {
 //    backdrop_add_css(backdrop_get_path('module', 'highlightjs_wysiwyg')
 //      . '/libraries/highlightjs/styles/' . config_get('highlightjs_wysiwyg.settings','csh_theme') . '.css');
 //    backdrop_add_css(backdrop_get_path('module', 'highlightjs_wysiwyg')
 //      . '/css/csh.css');
-
+//
 //    backdrop_add_js(backdrop_get_path('module', 'highlightjs_wysiwyg')
 //      . '/libraries/highlightjs/highlight.pack.js');
 //    backdrop_add_js('jQuery(document).ready(function () { hljs.initHighlightingOnLoad(); });', array(
 //      'type' => 'inline',
 //      'scope' => 'footer',
 //    ));
-
-    backdrop_add_js('https://cdnjs.cloudflare.com/ajax/libs/vue/2.5.2/vue.min.js', 'external');
-    backdrop_add_js('https://cdn.jsdelivr.net/npm/sortablejs@1.7.0/Sortable.min.js', 'external');
-    backdrop_add_js('https://cdnjs.cloudflare.com/ajax/libs/Vue.Draggable/2.15.0/vuedraggable.min.js', 'external');
-  }
-}
+//  }
+//}
 
 /**
  * Implements hook_block_view().
@@ -197,16 +193,6 @@ function node_layout_get_active_regions(string $node_type) {
   // Get the node layout.
   $node_layout = layout_load('default');
 
-  // Get the template associated with the node layout.
-  // the template has the regions that can be selected.
-  $template = layout_get_layout_template_info($node_layout->layout_template);
-  $template_regions = $template['regions'];
-
-  // Return regions available for node type.
-  //  $node_types = array_filter(config_get('node_layout.settings', 'available_node_types'), function($type) {
-  //    return $type !== 0;
-  //  });
-
   $config = config_get('node_layout.settings');
   $region = $node_type . '_regions';
   if (!isset($config[$region])) {
@@ -214,7 +200,6 @@ function node_layout_get_active_regions(string $node_type) {
   }
 
   return array_filter($config[$region], function ($region) {
-    $foo = 'bar';
     return $region !== 0;
   });
 }

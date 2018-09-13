@@ -1,7 +1,3 @@
-<?php
-$foo = 'bar';
-?>
-
 <div id="edit-layout-draggable-form">
   <div id="add-block-form" class="row">
     <div class="panel panel-default">
@@ -11,8 +7,9 @@ $foo = 'bar';
       <div class="panel-body">
         <input type="text"
                name="add-block-reference"
+               @keyup.delete="hideResults"
                id="add-block-reference"
-               v-model="addBlockReference">
+               v-model="blockReferenceTitle">
         <select name="add-block-select-list"
                 class="form-control"
                 v-model="blockSelectList"
@@ -22,10 +19,17 @@ $foo = 'bar';
             {{ region.name }}
           </option>
         </select>
-        <button @click.prevent="addBlockToRegion()"
+        <button @click.prevent="addBlockToRegion"
                 class="btn btn-primary">
           Add Block
         </button>
+        <div v-if="blockReferenceTitle.length > 2 && hideBox === false">
+          <ul>
+            <li @click="makeSelection(item)" v-for="item in filteredItems">
+              {{ item.type }}: {{ item.title }}
+            </li>
+          </ul>
+        </div>
       </div>
     </div>
   </div>
@@ -34,6 +38,7 @@ $foo = 'bar';
       <div class="col-md">
         <h3>{{ region.name }}:</h3>
         <region v-on:update-list="handleListUpdate"
+                :ref="region.name"
                 :region-name="region.name"
                 :references="region.references">
         </region>
@@ -53,14 +58,19 @@ $foo = 'bar';
     <transition-group type="transition" :name="'flip-list'">
       <li class="list-group-item" v-for="element in list" :key="element.order">
         <i :class="element.fixed? 'fa fa-anchor' : 'glyphicon glyphicon-pushpin'" @click=" element.fixed=! element.fixed" aria-hidden="true"></i>
-        {{element.name}}
-        <span class="badge">{{element.order}}</span>
+        {{ element.type }}: {{element.name}}
+<!--        <span class="badge">{{element.order}}</span>-->
+        <span @click="removeItem(element.name)">XX</span>
       </li>
     </transition-group>
   </draggable>
 </script>
 
 <script type="text/javascript">
+  const fooLayout = <?php print $data['encoded_layout']; ?>;
+
+  <?php $foo = 'bar'; ?>
+
   jQuery(document).ready(function () {
     draggableForm.initialize();
   });
@@ -72,20 +82,68 @@ $foo = 'bar';
       regionName: String,
     },
     data() {
-      return {
+      console.log(this.references);
+      let theData = {
         editable: true,
         isDragging: false,
         delayedDragging: false,
-        list: this.references.map((name, index) => {
-          return { name, order: index + 1, fixed: false };
+        list: this.references.map((item, index) => {
+          return {
+            name: item.title,
+            nid:  item.nid,
+            type: item.type,
+            order: index + 1,
+            fixed: false,
+          };
         }),
       };
+      return theData;
     },
-    created() {
-      // console.log(this);
+    computed: {
+      dragOptions() {
+        return {
+          animation: 0,
+          group: "description",
+          disabled: !this.editable,
+          ghostClass: "ghost",
+        };
+      },
     },
-    beforeUpdate() {
-      // console.log(this);
+    watch: {
+      list(newList) {
+        var placeholderExists = newList.filter(value => value.name === 'placeholder');
+
+        if (placeholderExists.length >= 1 && newList.length > 1) {
+          this.list = this.list.filter(value => value.name !== 'placeholder');
+        }
+
+        if (placeholderExists.length === 0 && newList.length === 0) {
+          this.list = [{
+            fixed: false,
+            name: 'placeholder',
+            nid: null,
+            type: null,
+            order: 1,
+          }];
+        }
+
+        // Emit event with new values.
+        if (this.list.filter(value => value.name !== 'placeholder')) {
+          this.$emit('update-list', {
+            name: this.regionName,
+            references: this.list,
+          });
+        }
+      },
+      isDragging(newValue) {
+        if (newValue) {
+          this.delayedDragging = true;
+          return;
+        }
+        this.$nextTick(() => {
+          this.delayedDragging = false;
+        });
+      },
     },
     methods: {
       // orderList() {
@@ -100,95 +158,99 @@ $foo = 'bar';
           (!relatedElement || !relatedElement.fixed) && !draggedElement.fixed
         );
       },
-    },
-    computed: {
-      dragOptions() {
-        return {
-          animation: 0,
-          group: "description",
-          disabled: !this.editable,
-          ghostClass: "ghost"
-        };
-      },
-    },
-    watch: {
-      isDragging(newValue) {
-        if (newValue) {
-          this.delayedDragging = true;
-          return;
-        }
-        this.$nextTick(() => {
-          this.delayedDragging = false;
-        });
-      },
-      list(newValue, oldValue) {
-        var placeholderExists = newValue.filter(value => value.name === 'placeholder');
+      removeItem(itemName) {
+        this.list = this.list.filter(value => value.name !== itemName);
 
-        if (placeholderExists.length === 1 && newValue.length > 1) {
-          this.list = this.list.filter(value => value.name !== 'placeholder');
-        }
+        var placeholderExists = this.list.filter(value => value.name === 'placeholder');
 
-        if (placeholderExists.length === 0 && newValue.length === 0) {
+        // if (placeholderExists.length === 1 && this.list.length > 1) {
+        //   this.list = this.list.filter(value => value.name !== 'placeholder');
+        // }
+
+        if (placeholderExists.length === 0 && this.list.length === 0) {
           this.list = [{
             fixed: false,
             name: 'placeholder',
+            nid: null,
+            type: null,
             order: 1,
           }];
-        }
-
-        // Emit event with new values.
-        if (this.list.filter(value => value.name !== 'placeholder')) {
-          this.$emit('update-list', {
-            name: this.regionName,
-            references: this.list,
-          });
         }
       },
     },
   });
 
-  const fooLayout = <?php print $data['encoded_layout']; ?>;
-
   let draggableForm = new Vue({
     el: '#edit-layout-draggable-form',
-    // components: {
-    //   region: Region,
-    // },
     data() {
       return {
-        addBlockReference: '',
+        backspaceTime: 0,
+        blockReference: {},
+        blockReferenceTitle: '',
         blockSelectList: 'top',
         layout: fooLayout,
         finalLayout: fooLayout,
+        addedBlocks: [],
+        nodes: [],
+        hideBox: false,
       };
     },
-    updated() {
-      console.log(this);
+    computed: {
+      filteredItems() {
+        return this.nodes.filter((item) => {
+          return item.title.toLowerCase().indexOf(this.blockReferenceTitle.toLowerCase()) > -1
+        })
+      },
     },
     methods: {
       initialize() {
-        // console.log(this.layout);
+        // Grab the node references.
+        let that = this;
+
+        const baseURL = fooLayout.baseURL;
+        let nodes = fetch(baseURL + '/api/node_layouts')
+        .then((response) => response.json())
+        .then((data) => {
+          console.log(data, 'dat');
+          that.nodes = JSON.parse(data);
+        })
+        .catch((err) => {
+          console.log(err);
+        });
       },
       addBlockToRegion() {
-        console.log(this.layout.regions[this.blockSelectList]);
-
-        this.layout.regions[this.blockSelectList].references = [];
-        // this[this.blockSelectList + 'List'].push({
-        //   name: this.addBlockReference,
-        //   order: this[this.blockSelectList + 'List'].length + 1,
-        //   fixed: false,
-        // });
+        this.$refs[this.blockSelectList][0].list.push({
+          fixed: false,
+          name: this.blockReference.title,
+          order: 1,
+          nid: this.blockReference.nid,
+          type: this.blockReference.type,
+        });
       },
       handleListUpdate(updatedlist) {
-        // console.log(updatedlist);
-        // this.finalRegions
-        // console.log(this.finalLayout);
-
         this.finalLayout.regions[updatedlist.name]['references'] = updatedlist.references;
 
-        console.log(this.finalLayout, 'final layout');
-        jQuery('input[name="_final_layout"]').val(JSON.stringify(this.finalLayout));
-      }
+        Object.keys(this.$refs).forEach((ref) => {
+          this.finalLayout.regions[ref]['references'] = this.$refs[ref][0].list;
+        });
+
+        jQuery('input[name="_final_layout"]').val(JSON.stringify(this.layout));
+      },
+      onMove({ relatedContext, draggedContext }) {
+        const relatedElement = relatedContext.element;
+        const draggedElement = draggedContext.element;
+        return (
+          (!relatedElement || !relatedElement.fixed) && !draggedElement.fixed
+        );
+      },
+      makeSelection(item) {
+        this.blockReference = item;
+        this.blockReferenceTitle = item.title;
+        this.hideBox = true;
+      },
+      hideResults(event) {
+        this.hideBox = false;
+      },
     },
   });
 </script>

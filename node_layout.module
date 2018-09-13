@@ -52,8 +52,8 @@ function node_layout_menu() {
     'type' => MENU_LOCAL_TASK,
   );
 
-  $items['node_layout_titles/autocomplete'] = array(
-    'page callback' => '_node_layout_title_autocomplete',
+  $items['api/node_layouts'] = array(
+    'page callback' => '_node_layouts_listing',
     'access arguments' => 'access content',
     'type' => MENU_CALLBACK,
   );
@@ -101,28 +101,6 @@ function node_layout_block_info() {
 
   return $blocks;
 }
-
-/**
- * Implements hook_preprocess_page().
- */
-//function node_layout_preprocess_page(&$variables) {
-//  // Add the JS and CSS assets if the page is supposed to have code syntax highlighting.
-//  $nid = explode('/', current_path())[1];
-//  $node = node_load($nid);
-//  if ($node && node_layout_is_type_available($node->type)) {
-//    backdrop_add_css(backdrop_get_path('module', 'highlightjs_wysiwyg')
-//      . '/libraries/highlightjs/styles/' . config_get('highlightjs_wysiwyg.settings','csh_theme') . '.css');
-//    backdrop_add_css(backdrop_get_path('module', 'highlightjs_wysiwyg')
-//      . '/css/csh.css');
-//
-//    backdrop_add_js(backdrop_get_path('module', 'highlightjs_wysiwyg')
-//      . '/libraries/highlightjs/highlight.pack.js');
-//    backdrop_add_js('jQuery(document).ready(function () { hljs.initHighlightingOnLoad(); });', array(
-//      'type' => 'inline',
-//      'scope' => 'footer',
-//    ));
-//  }
-//}
 
 /**
  * Implements hook_block_view().
@@ -223,27 +201,20 @@ function node_layout_get_template() {
 }
 
 /**
- * Return suggestions for path autocomplete.
- *
- * @param string $search
- *   The search result.
+ * Returns a list of all nodes with type of hidden path.
  */
-function _node_layout_title_autocomplete($search) {
-  $matches = array();
+function _node_layouts_listing() {
+  // Query node table based on hidden path settings.
+  $enabled_types = array_filter(node_type_get_types(), function($val) {
+    return $val->settings['hidden_path'];
+  });
 
-  // Query node table based on titles.
-  $query = db_select('node', 'n');
+  $types_names = array_map(function($val) {
+    return $val->type;
+  }, $enabled_types);
 
-  $results = $query->fields('n')
-    ->fields('n', array('title'))
-    ->condition('n.title', '%' . db_like($search) . '%', 'LIKE')
-    ->range(0, 10)
-    ->execute();
+  $results = db_query('SELECT nid, title, type FROM {node} WHERE type IN (:types)', array(':types' => $types_names))->fetchAll();
 
-  // Add results to JSON output. "Node path" => "node type: node title (node ID)".
-  foreach ($results as $result) {
-    $matches['node/' . $result->nid] = check_plain($result->type . ': ' . $result->title . ' (' . $result->nid . ')');
-  }
-
-  backdrop_json_output($matches);
+  backdrop_json_output(json_encode($results));
+  exit();
 }

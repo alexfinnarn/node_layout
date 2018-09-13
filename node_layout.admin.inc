@@ -12,59 +12,56 @@
  * @return array
  */
 function node_layout_edit_form($form = array(), &$form_state) {
+  backdrop_add_js('https://cdnjs.cloudflare.com/ajax/libs/vue/2.5.2/vue.min.js', 'external');
+  backdrop_add_js('https://cdn.jsdelivr.net/npm/sortablejs@1.7.0/Sortable.min.js', 'external');
+  backdrop_add_js('https://cdnjs.cloudflare.com/ajax/libs/Vue.Draggable/2.15.0/vuedraggable.min.js', 'external');
 
   $nid = explode('/', current_path())[1];
   $node = node_load($nid);
   $form_state['_nid'] = $nid;
-  $layout = node_layout_get_layout($nid);
-  $form_state['_layout'] = $layout;
 
   // Boxes for each region.
   $regions = node_layout_get_active_regions($node->type);
+  $layout = node_layout_get_layout($nid);
 
-  // Create block.
-  $form['add_block'] = array(
-    '#type' => 'fieldset',
-    '#title' => t('Add Block'),
-    '#collapsible' => FALSE,
-  );
+  global $base_url;
 
-  $form['add_block']['selected_reference'] = array(
-    '#type' => 'textfield',
-    '#title' => t('Reference'),
-    '#description' => t('Enter the box you want to add to the region.'),
-    '#autocomplete_path' => 'node_layout_titles/autocomplete',
-  );
+  if ($layout->regions === false) {
+    $layout->data = array(
+      'baseURL' => $base_url,
+      'nid' => $nid,
+      'regions' => array_map(function($region) {
+        return array(
+          'name' => $region,
+          'references' => array(
+            array(
+              'nid' => NULL,
+              'title' => 'placeholder',
+              'type' => NULL,
+            ),
+          ),
+        );
+      }, $regions),
+    );
+    $data = array(
+      'encoded_layout' => json_encode($layout->data),
+      'layout' => $layout,
+    );
+  } else {
+    $decoded_data = unserialize($layout->data);
+    $decoded_data->baseURL = $base_url;
+    $data = array(
+      'encoded_layout' => json_encode($decoded_data),
+      'layout' => $layout,
+    );
+  }
 
-  $form['add_block']['selected_region'] = array(
-    '#type' => 'select',
-    '#options' => $regions,
-  );
-
-  $form['add_block']['add_button'] = array(
-    '#type' => 'submit',
-    '#value' => t('Add'),
-    '#weight' => 19,
-    '#submit' => array('edit_layout_add_block'),
-  );
+  $form_state['_layout'] = $layout;
 
   $form['regions'] = array(
     '#type' => 'fieldset',
     '#title' => t('Regions:'),
     '#collapsible' => FALSE,
-  );
-
-  backdrop_add_js('https://cdnjs.cloudflare.com/ajax/libs/vue/2.5.2/vue.min.js', 'external');
-  backdrop_add_js('https://cdn.jsdelivr.net/npm/sortablejs@1.7.0/Sortable.min.js', 'external');
-  backdrop_add_js('https://cdnjs.cloudflare.com/ajax/libs/Vue.Draggable/2.15.0/vuedraggable.min.js', 'external');
-
-  // backdrop_add_js(backdrop_get_path('module', 'node_layout'). '/js/edit_layout.js');
-
-  $foo = 'bar';
-
-  $data = array(
-    'encoded_layout' => json_encode(unserialize($layout->data)),
-    'layout' => $layout,
   );
 
   $form['regions']['vue_form'] = array(
@@ -91,14 +88,16 @@ function node_layout_edit_form_submit(&$form, &$form_state) {
   $arr = (array) $submitted_layout->regions;
 
   foreach(array_keys($arr) as $value) {
-
     foreach($submitted_layout->regions->$value->references as $index => $value2) {
-      $foo = 'bar';
-      $submitted_layout->regions->$value->references[$index] = $value2->name;
+      $submitted_layout->regions->$value->references[$index] = array(
+        'title' => $value2->name,
+        'nid' => $value2->nid,
+        'type' => $value2->type,
+      );
     }
   }
 
-  if (isset($form_state['_layout'])) {
+  if ($form_state['_layout']->regions !== FALSE) {
     $entity = entity_load('node_layout', $form_state['_layout']->id);
     $entity->data = serialize($submitted_layout);
   }

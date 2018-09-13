@@ -46,14 +46,14 @@ function node_layout_menu() {
     'description' => 'Edit Node Layout',
     'page callback' => 'backdrop_get_form',
     'page arguments' => array('node_layout_edit_form'),
-//    'access arguments' => array('edit node layouts'),
+    //    'access arguments' => array('edit node layouts'),
     'access callback' => 'node_layout_edit_access_callback',
     'file' => 'node_layout.admin.inc',
     'type' => MENU_LOCAL_TASK,
   );
 
-  $items['node_layout_titles/autocomplete'] = array(
-    'page callback' => '_node_layout_title_autocomplete',
+  $items['api/node_layouts'] = array(
+    'page callback' => '_node_layouts_listing',
     'access arguments' => 'access content',
     'type' => MENU_CALLBACK,
   );
@@ -73,6 +73,18 @@ function node_layout_menu() {
 }
 
 /**
+ * Implements hook_theme().
+ */
+function node_layout_theme($existing, $type, $theme, $path) {
+    return array(
+      'node_layout_edit_layout' => array(
+        'variables' => array('data' => NULL),
+        'template' => 'templates/edit_layout'
+      ),
+    );
+}
+
+/**
  * Implements hook_block_info().
  */
 function node_layout_block_info() {
@@ -83,7 +95,7 @@ function node_layout_block_info() {
     $blocks["node_layout_$region"] = array(
       'info' => "Node Layout Block: $region",
       'description' => t('The hierarchical list...'),
-      //    'cache' => BACKDROP_NO_CACHE,
+//      'cache' => BACKDROP_NO_CACHE,
     );
   }
 
@@ -159,24 +171,13 @@ function node_layout_get_active_regions(string $node_type) {
   // Get the node layout.
   $node_layout = layout_load('default');
 
-  // Get the template associated with the node layout.
-  // the template has the regions that can be selected.
-  $template = layout_get_layout_template_info($node_layout->layout_template);
-  $template_regions = $template['regions'];
-
-  // Return regions available for node type.
-//  $node_types = array_filter(config_get('node_layout.settings', 'available_node_types'), function($type) {
-//    return $type !== 0;
-//  });
-
   $config = config_get('node_layout.settings');
-  $region = $node_type. '_regions';
+  $region = $node_type . '_regions';
   if (!isset($config[$region])) {
     return [];
   }
 
-  return array_filter($config[$region], function($region) {
-    $foo = 'bar';
+  return array_filter($config[$region], function ($region) {
     return $region !== 0;
   });
 }
@@ -200,27 +201,20 @@ function node_layout_get_template() {
 }
 
 /**
- * Return suggestions for path autocomplete.
- *
- * @param string $search
- *   The search result.
+ * Returns a list of all nodes with type of hidden path.
  */
-function _node_layout_title_autocomplete($search) {
-  $matches = array();
+function _node_layouts_listing() {
+  // Query node table based on hidden path settings.
+  $enabled_types = array_filter(node_type_get_types(), function($val) {
+    return $val->settings['hidden_path'];
+  });
 
-  // Query node table based on titles.
-  $query = db_select('node', 'n');
+  $types_names = array_map(function($val) {
+    return $val->type;
+  }, $enabled_types);
 
-  $results = $query->fields('n')
-    ->fields('n', array('title'))
-    ->condition('n.title', '%' . db_like($search) . '%', 'LIKE')
-    ->range(0, 10)
-    ->execute();
+  $results = db_query('SELECT nid, title, type FROM {node} WHERE type IN (:types)', array(':types' => $types_names))->fetchAll();
 
-  // Add results to JSON output. "Node path" => "node type: node title (node ID)".
-  foreach ($results as $result) {
-    $matches['node/' . $result->nid] = check_plain($result->type . ': ' . $result->title . ' (' . $result->nid . ')');
-  }
-
-  backdrop_json_output($matches);
+  backdrop_json_output(json_encode($results));
+  exit();
 }

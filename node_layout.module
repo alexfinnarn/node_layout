@@ -136,6 +136,15 @@ function node_layout_block_view($delta = '', $settings = array()) {
   }
 }
 
+function node_layout_form_node_type_form_alter(array &$form, array $form_state) {
+  $foo = 'bar';
+
+  $form['display']['node_layout'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Node Layout'),
+  );
+}
+
 /**
  * Gets the layout for the node in question.
  *

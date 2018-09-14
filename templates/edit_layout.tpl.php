@@ -7,6 +7,7 @@
       <div class="panel-body">
         <input type="text"
                name="add-block-reference"
+               autocomplete="off"
                @keyup.delete="hideResults"
                id="add-block-reference"
                v-model="blockReferenceTitle">
@@ -20,10 +21,11 @@
           </option>
         </select>
         <button @click.prevent="addBlockToRegion"
+                v-if="blockReference"
                 class="btn btn-primary">
           Add Block
         </button>
-        <div v-if="blockReferenceTitle.length > 2 && hideBox === false">
+        <div v-if="blockReferenceTitle.length >= 2 && hideBox === false">
           <ul>
             <li @click="makeSelection(item)" v-for="item in filteredItems">
               {{ item.type }}: {{ item.title }}
@@ -180,7 +182,7 @@
     el: '#edit-layout-draggable-form',
     data() {
       return {
-        blockReference: {},
+        blockReference: null,
         blockReferenceTitle: '',
         blockSelectList: 'top',
         layout: fooLayout,
@@ -243,6 +245,7 @@
       },
       hideResults(event) {
         this.hideBox = false;
+        this.blockReference = null;
       },
     },
   });

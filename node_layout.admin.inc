@@ -42,13 +42,13 @@ function node_layout_edit_form($form = array(), &$form_state) {
   $data = nl_edit_form_prepare_data($layout, $regions, $nid);
   $form_state['_layout'] = $layout;
 
-  $form['regions'] = array(
+  $form['node_layout'] = array(
     '#type' => 'fieldset',
-    '#title' => t('Regions:'),
+    '#title' => t('Node Layout'),
     '#collapsible' => FALSE,
   );
 
-  $form['regions']['vue_form'] = array(
+  $form['node_layout']['vue_form'] = array(
     '#markup' => theme('node_layout_edit_layout', array('data' => $data)),
   );
 
@@ -81,7 +81,7 @@ function node_layout_edit_form_submit(&$form, &$form_state) {
     }
   }
 
-  if ($form_state['_layout']->regions !== FALSE) {
+  if ($form_state['_layout'] !== FALSE) {
     $entity = entity_load('node_layout', $form_state['_layout']->id);
     $entity->data = serialize($submitted_layout);
   }
@@ -101,7 +101,7 @@ function node_layout_edit_form_submit(&$form, &$form_state) {
 
 // @todo Refactor so that this function is included in generating a layout entity.
 function nl_edit_form_prepare_data($layout, $regions, $nid) {
-  if ($layout->regions === false) {
+  if ($layout === FALSE) {
     $layout->data = array(
       'nid' => $nid,
       'regions' => array_map(function($region) {
@@ -119,12 +119,12 @@ function nl_edit_form_prepare_data($layout, $regions, $nid) {
     );
     $data = array(
       'encoded_layout' => json_encode($layout->data),
-//      'layout' => $layout,
+      'layout' => $layout,
     );
   } else {
     $data = array(
       'encoded_layout' => json_encode(unserialize($layout->data)),
-//      'layout' => $layout,
+      'layout' => $layout,
     );
   }
 

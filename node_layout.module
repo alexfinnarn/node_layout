@@ -89,13 +89,17 @@ function node_layout_theme($existing, $type, $theme, $path) {
  */
 function node_layout_block_info() {
   $blocks = array();
+
+  // Combine arrays of regions so that as long as one node layout uses it, the
+  // region is included.
   $regions = node_layout_get_active_regions();
 
   foreach ($regions as $region) {
     $blocks["node_layout_$region"] = array(
       'info' => "Node Layout Block: $region",
-      'description' => t('The hierarchical list...'),
-//      'cache' => BACKDROP_NO_CACHE,
+      'description' => t("Layout block used for $region region."),
+      // @todo Add caching strategy.
+      // 'cache' => BACKDROP_NO_CACHE,
     );
   }
 
@@ -111,39 +115,23 @@ function node_layout_block_view($delta = '', $settings = array()) {
   // the logic if it is determined the layout isn't needed for the current route.
   $item = menu_get_item();
   if (strpos($delta, 'node_layout') !== -1 && $item['path'] === 'node/%') {
+    $block['content'] = NULL;
+    $regions = node_layout_get_active_regions();
+
     $node = menu_get_object('node');
-    $layout = node_layout_get_layout($node->id);
+    $layout = node_layout_get_layout($node->nid);
 
-    if ($layout->regions) {
-      switch ($delta) {
-        case 'node_layout_header':
-          $nid = explode('/', $layout->regions['header']['reference'])[1];
-          if ($nid) {
-            $block['content'] = node_view(node_load($nid));
-            $block['subject'] = 'header block';
-            return $block;
-          }
-
-          break;
-        case 'node_layout_sidebar':
-          $nid = explode('/', $layout->regions['sidebar']['reference'])[1];
-          if ($nid) {
-            $block['content'] = node_view(node_load($nid));
-            $block['subject'] = 'sidebar block';
-            return $block;
-          }
-
-          break;
-        case 'node_layout_bottom':
-          $nid = explode('/', $layout->regions['bottom']['reference'])[1];
-          if ($nid) {
-            $block['content'] = node_view(node_load($nid));
-            $block['subject'] = 'bottom block';
-            return $block;
-          }
-
-          break;
+    if ($layout) {
+      $region_name = explode('node_layout_', $delta)[1];
+      $data = unserialize($layout->data);
+      foreach ($data->regions->$region_name->references as $reference) {
+        if ($reference['nid']) {
+          $block['content'][] = node_view(node_load($reference['nid']));
+        }
       }
+
+      // $block['subject'] = 'header block';
+      return $block;
     }
   }
 }
@@ -158,8 +146,18 @@ function node_layout_get_layout($nid) {
   $layout = &backdrop_static(__FUNCTION__);
 
   if ($layout === NULL) {
-    $layout = db_query('SELECT * FROM {node_layout} WHERE nid = :nid', array(':nid' => $nid))->fetch();
-    $layout->regions = unserialize($layout->data);
+    $layout_id = db_query('SELECT id FROM {node_layout} WHERE nid = :nid', array(':nid' => $nid))->fetchField();
+//    $layout->regions = unserialize($layout->data);
+    if ($layout_id) {
+      $layout = entity_load('node_layout', $layout_id);
+    } else {
+//      $values = array();
+//      $values['nid'] = $nid;
+//      $values['data'] = $submitted_layout;
+//      $layout = entity_create('node_layout', $values);
+      $layout = false;
+    }
+
   }
 
   return $layout;
@@ -168,19 +166,32 @@ function node_layout_get_layout($nid) {
 /**
  * Gets active regions the layout tool can use.
  *
+ * @param string $node_type
+ *
  * @return array
  */
-function node_layout_get_active_regions(string $node_type) {
-  // Get the node layout.
-  $node_layout = layout_load('default');
-
+function node_layout_get_active_regions(string $node_type = '') {
   $config = config_get('node_layout.settings');
-  $region = $node_type . '_regions';
-  if (!isset($config[$region])) {
-    return [];
+
+  // Get the node layout.
+  // @todo Add to settings page.
+//  $node_layout = layout_load($config['active_layout']);
+
+  if ($node_type === '') {
+    $node_types = array_filter(array_values(node_layout_get_available_node_types()), function($value) {
+      return $value !== 0;
+    });
+  } else {
+    $node_types = array($node_type);
   }
 
-  return array_filter($config[$region], function ($region) {
+  $regions = array();
+  foreach ($node_types as $type) {
+    // @todo Don't merge arrays in a loop.
+    $regions = array_merge($config[$type. '_regions'], $regions);
+  }
+
+  return array_filter($regions, function ($region) {
     return $region !== 0;
   });
 }
@@ -197,11 +208,14 @@ function node_layout_is_type_available($type = '') {
     return NULL;
   }
 
-  $config = config_get('node_layout.settings');
-  return in_array($type, array_values($config['available_node_types']), TRUE);
+  return in_array($type, array_values(node_layout_get_available_node_types()), TRUE);
 }
 
-
+/**
+ * Returns an array of the node types that can use the layout tool.
+ *
+ * @return mixed
+ */
 function node_layout_get_available_node_types() {
   $config = config_get('node_layout.settings');
   return $config['available_node_types'];

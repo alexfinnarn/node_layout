@@ -37,6 +37,7 @@
     <div v-for="region in layout.regions">
       <div class="col-md">
         <h3>{{ region.name }}:</h3>
+<!--        <pre>{{ region.references }}</pre>-->
         <region v-on:update-list="handleListUpdate"
                 :ref="region.name"
                 :region-name="region.name"
@@ -68,6 +69,8 @@
 
 <script type="text/javascript">
   const fooLayout = <?php print $data['encoded_layout']; ?>;
+
+  <?php $foo = 'bar'; ?>
 
   jQuery(document).ready(function () {
     draggableForm.initialize();
@@ -155,6 +158,8 @@
         );
       },
       removeItem(itemName) {
+        // @todo Remove item by index/key so that you could have the same content
+        // repeated.
         this.list = this.list.filter(value => value.name !== itemName);
 
         var placeholderExists = this.list.filter(value => value.name === 'placeholder');
@@ -179,7 +184,7 @@
         blockReferenceTitle: '',
         blockSelectList: 'top',
         layout: fooLayout,
-        // finalLayout: fooLayout,
+        finalLayout: fooLayout,
         nodes: [],
         hideBox: false,
       };
@@ -217,18 +222,19 @@
         });
       },
       handleListUpdate(updatedlist) {
-        // this.finalLayout.regions[updatedlist.name]['references'] = updatedlist.references;
+        this.finalLayout.regions[updatedlist.name]['references'] = updatedlist.references;
 
         // On page load, the references for the finalLayout variable aren't mapped.
         // I think this is also the case since the lists are tracked within region
         // components but not within the main Vue instances.
-        // Object.keys(this.$refs).forEach((ref) => {
-        //   this.finalLayout.regions[ref]['references'] = this.$refs[ref][0].list;
-        // });
+        Object.keys(this.$refs).forEach((ref) => {
+          this.finalLayout.regions[ref]['references'] = this.$refs[ref][0].list;
+        });
 
         // I don't know of a better way to sync the component state and the
         // Backdrop form state.
-        jQuery('input[name="_final_layout"]').val(JSON.stringify(this.layout));
+        // @todo See if "this.layout" can be used instead.
+        jQuery('input[name="_final_layout"]').val(JSON.stringify(this.finalLayout));
       },
       makeSelection(item) {
         this.blockReference = item;

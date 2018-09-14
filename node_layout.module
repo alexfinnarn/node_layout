@@ -107,6 +107,8 @@ function node_layout_block_info() {
  */
 function node_layout_block_view($delta = '', $settings = array()) {
 
+  // @todo Add better check for exclusion so that future calls won't run through
+  // the logic if it is determined the layout isn't needed for the current route.
   $item = menu_get_item();
   if (strpos($delta, 'node_layout') !== -1 && $item['path'] === 'node/%') {
     $node = menu_get_object('node');
@@ -151,6 +153,7 @@ function node_layout_block_view($delta = '', $settings = array()) {
  *
  * @return array|bool|mixed|null
  */
+// @todo Refactor so that this function returns a node_layout entity.
 function node_layout_get_layout($nid) {
   $layout = &backdrop_static(__FUNCTION__);
 
@@ -182,6 +185,13 @@ function node_layout_get_active_regions(string $node_type) {
   });
 }
 
+/**
+ * Returns whether or not the node type can use the layout tool.
+ *
+ * @param string $type
+ *
+ * @return bool|null
+ */
 function node_layout_is_type_available($type = '') {
   if ($type === '') {
     return NULL;
@@ -191,13 +201,10 @@ function node_layout_is_type_available($type = '') {
   return in_array($type, array_values($config['available_node_types']), TRUE);
 }
 
+
 function node_layout_get_available_node_types() {
   $config = config_get('node_layout.settings');
   return $config['available_node_types'];
-}
-
-function node_layout_get_template() {
-
 }
 
 /**

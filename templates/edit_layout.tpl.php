@@ -69,8 +69,6 @@
 <script type="text/javascript">
   const fooLayout = <?php print $data['encoded_layout']; ?>;
 
-  <?php $foo = 'bar'; ?>
-
   jQuery(document).ready(function () {
     draggableForm.initialize();
   });
@@ -82,8 +80,7 @@
       regionName: String,
     },
     data() {
-      console.log(this.references);
-      let theData = {
+      return {
         editable: true,
         isDragging: false,
         delayedDragging: false,
@@ -97,7 +94,6 @@
           };
         }),
       };
-      return theData;
     },
     computed: {
       dragOptions() {
@@ -162,11 +158,6 @@
         this.list = this.list.filter(value => value.name !== itemName);
 
         var placeholderExists = this.list.filter(value => value.name === 'placeholder');
-
-        // if (placeholderExists.length === 1 && this.list.length > 1) {
-        //   this.list = this.list.filter(value => value.name !== 'placeholder');
-        // }
-
         if (placeholderExists.length === 0 && this.list.length === 0) {
           this.list = [{
             fixed: false,
@@ -184,13 +175,11 @@
     el: '#edit-layout-draggable-form',
     data() {
       return {
-        backspaceTime: 0,
         blockReference: {},
         blockReferenceTitle: '',
         blockSelectList: 'top',
         layout: fooLayout,
-        finalLayout: fooLayout,
-        addedBlocks: [],
+        // finalLayout: fooLayout,
         nodes: [],
         hideBox: false,
       };
@@ -206,12 +195,11 @@
       initialize() {
         // Grab the node references.
         let that = this;
+        const baseURL = Backdrop.settings.node_layout.baseURL;
 
-        const baseURL = fooLayout.baseURL;
         let nodes = fetch(baseURL + '/api/node_layouts')
         .then((response) => response.json())
         .then((data) => {
-          console.log(data, 'dat');
           that.nodes = JSON.parse(data);
         })
         .catch((err) => {
@@ -219,29 +207,28 @@
         });
       },
       addBlockToRegion() {
+        // @todo Add check for when the user doesn't select a choice.
         this.$refs[this.blockSelectList][0].list.push({
-          fixed: false,
-          name: this.blockReference.title,
-          order: 1,
           nid: this.blockReference.nid,
           type: this.blockReference.type,
+          name: this.blockReference.title,
+          order: this.$refs[this.blockSelectList][0].list.length + 1,
+          fixed: false,
         });
       },
       handleListUpdate(updatedlist) {
-        this.finalLayout.regions[updatedlist.name]['references'] = updatedlist.references;
+        // this.finalLayout.regions[updatedlist.name]['references'] = updatedlist.references;
 
-        Object.keys(this.$refs).forEach((ref) => {
-          this.finalLayout.regions[ref]['references'] = this.$refs[ref][0].list;
-        });
+        // On page load, the references for the finalLayout variable aren't mapped.
+        // I think this is also the case since the lists are tracked within region
+        // components but not within the main Vue instances.
+        // Object.keys(this.$refs).forEach((ref) => {
+        //   this.finalLayout.regions[ref]['references'] = this.$refs[ref][0].list;
+        // });
 
+        // I don't know of a better way to sync the component state and the
+        // Backdrop form state.
         jQuery('input[name="_final_layout"]').val(JSON.stringify(this.layout));
-      },
-      onMove({ relatedContext, draggedContext }) {
-        const relatedElement = relatedContext.element;
-        const draggedElement = draggedContext.element;
-        return (
-          (!relatedElement || !relatedElement.fixed) && !draggedElement.fixed
-        );
       },
       makeSelection(item) {
         this.blockReference = item;

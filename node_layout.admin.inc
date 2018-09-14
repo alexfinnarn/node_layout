@@ -6,56 +6,40 @@
  */
 
 /**
+ * Callback for Node Layout edit form.
+ *
  * @param array $form
- * @param $form_state
+ * @param array $form_state
  *
  * @return array
+ * @throws \Exception
  */
 function node_layout_edit_form($form = array(), &$form_state) {
+
+  // Add the JS needed for Vue and the Draggable component.
   backdrop_add_js('https://cdnjs.cloudflare.com/ajax/libs/vue/2.5.2/vue.min.js', 'external');
   backdrop_add_js('https://cdn.jsdelivr.net/npm/sortablejs@1.7.0/Sortable.min.js', 'external');
   backdrop_add_js('https://cdnjs.cloudflare.com/ajax/libs/Vue.Draggable/2.15.0/vuedraggable.min.js', 'external');
 
+  // Include the base URL to use in fetching a node layout list later.
+  global $base_url;
+  backdrop_add_js(array(
+    'node_layout' => array(
+      'baseURL' => $base_url
+    )
+  ), 'setting');
+
+  // Since the route doesn't already have the node loaded, we need to parse the
+  // path output, e.g. "node/3/layout".
+  // @todo Add error handling around different path outcomes.
   $nid = explode('/', current_path())[1];
   $node = node_load($nid);
   $form_state['_nid'] = $nid;
 
-  // Boxes for each region.
+  // Each node type will have different layout settings.
   $regions = node_layout_get_active_regions($node->type);
   $layout = node_layout_get_layout($nid);
-
-  global $base_url;
-
-  if ($layout->regions === false) {
-    $layout->data = array(
-      'baseURL' => $base_url,
-      'nid' => $nid,
-      'regions' => array_map(function($region) {
-        return array(
-          'name' => $region,
-          'references' => array(
-            array(
-              'nid' => NULL,
-              'title' => 'placeholder',
-              'type' => NULL,
-            ),
-          ),
-        );
-      }, $regions),
-    );
-    $data = array(
-      'encoded_layout' => json_encode($layout->data),
-      'layout' => $layout,
-    );
-  } else {
-    $decoded_data = unserialize($layout->data);
-    $decoded_data->baseURL = $base_url;
-    $data = array(
-      'encoded_layout' => json_encode($decoded_data),
-      'layout' => $layout,
-    );
-  }
-
+  $data = nl_edit_form_prepare_data($layout, $regions, $nid);
   $form_state['_layout'] = $layout;
 
   $form['regions'] = array(
@@ -113,6 +97,38 @@ function node_layout_edit_form_submit(&$form, &$form_state) {
   } catch (EntityStorageException $e) {
     watchdog('node_layout', $e->getMessage());
   }
+}
+
+// @todo Refactor so that this function is included in generating a layout entity.
+function nl_edit_form_prepare_data($layout, $regions, $nid) {
+  if ($layout->regions === false) {
+    $layout->data = array(
+      'nid' => $nid,
+      'regions' => array_map(function($region) {
+        return array(
+          'name' => $region,
+          'references' => array(
+            array(
+              'nid' => NULL,
+              'title' => 'placeholder',
+              'type' => NULL,
+            ),
+          ),
+        );
+      }, $regions),
+    );
+    $data = array(
+      'encoded_layout' => json_encode($layout->data),
+//      'layout' => $layout,
+    );
+  } else {
+    $data = array(
+      'encoded_layout' => json_encode(unserialize($layout->data)),
+//      'layout' => $layout,
+    );
+  }
+
+  return $data;
 }
 
 function node_layout_edit_access_callback() {

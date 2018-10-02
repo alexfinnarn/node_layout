@@ -230,7 +230,7 @@
         blockReferenceTitle: '',
         blockSelectList: 'top',
         editBlock: {},
-        editBlockURL: 'http://localhost:32861/node/4/edit',
+        editBlockURL: this.baseURL,
         layout: fooLayout,
         finalLayout: fooLayout,
         nodes: [],
@@ -269,18 +269,8 @@
         });
       },
       handleBlockEdit(block) {
-        console.log(block);
-        this.editBlockURL = `http://localhost:32861/node/${block.nid}/edit`;
+        this.editBlockURL = `${this.baseURL}/node/${block.nid}/edit`;
         this.editBlock = block;
-
-         // fetch(this.baseURL + '/api/node_layouts/blocks/4/edit')
-         //  .then((response) => response.text())
-         //  .then((data) => {
-         //    that.editBlockFormContent = data;
-         //  })
-         //  .catch((err) => {
-         //    console.log(err);
-         //  });
 
         document.getElementById('nl-iframe').contentWindow.location.reload();
       },

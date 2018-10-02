@@ -51,10 +51,37 @@
         <h4>{{ region.name }}</h4>
 <!--        <pre>{{ region.references }}</pre>-->
         <region v-on:update-list="handleListUpdate"
+                v-on:edit-block="handleBlockEdit"
                 :ref="region.name"
                 :region-name="region.name"
                 :references="region.references">
         </region>
+      </div>
+    </div>
+  </div>
+  <!-- Modal -->
+  <div class="modal fade" id="exampleModal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg" role="document">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="exampleModalLabel">
+            Edit: {{ editBlock.name }}
+          </h5>
+          <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+          </button>
+        </div>
+        <div class="modal-body">
+<!--          <span v-html="editBlockFormContent"></span>-->
+          <iframe id="nl-iframe"
+                  :src="editBlockURL"
+                  frameborder="0">
+          </iframe>
+        </div>
+<!--        <div class="modal-footer">-->
+<!--          <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>-->
+<!--          <button type="button" class="btn btn-primary">Save changes</button>-->
+<!--        </div>-->
       </div>
     </div>
   </div>
@@ -72,8 +99,10 @@
       <li class="list-group-item" v-for="element in list" :key="element.order">
         <i :class="element.fixed? 'fa fa-anchor' : 'glyphicon glyphicon-pushpin'" @click=" element.fixed=! element.fixed" aria-hidden="true"></i>
         {{ element.type }}: {{element.name}}
-<!--        <span class="badge">{{element.order}}</span>-->
-        <div class="btn btn-primary nl-edit-button" @click="editItem(element.name)">Edit</div>
+        <div class="btn btn-primary nl-edit-button"
+             data-toggle="modal"
+             data-target="#exampleModal"
+             @click="editItem(element)">Edit</div>
         <div class="btn btn-danger nl-remove-button" @click="removeItem(element.name)">Remove</div>
       </li>
     </transition-group>
@@ -170,6 +199,9 @@
           (!relatedElement || !relatedElement.fixed) && !draggedElement.fixed
         );
       },
+      editItem(item) {
+        this.$emit('edit-block', item);
+      },
       removeItem(itemName) {
         // @todo Remove item by index/key so that you could have the same content
         // repeated.
@@ -193,9 +225,12 @@
     el: '#edit-layout-draggable-form',
     data() {
       return {
+        baseURL: Backdrop.settings.node_layout.baseURL,
         blockReference: null,
         blockReferenceTitle: '',
         blockSelectList: 'top',
+        editBlock: {},
+        editBlockURL: 'http://localhost:32861/node/4/edit',
         layout: fooLayout,
         finalLayout: fooLayout,
         nodes: [],
@@ -213,9 +248,8 @@
       initialize() {
         // Grab the node references.
         let that = this;
-        const baseURL = Backdrop.settings.node_layout.baseURL;
 
-        let nodes = fetch(baseURL + '/api/node_layouts')
+        let nodes = fetch(this.baseURL + '/api/node_layouts')
         .then((response) => response.json())
         .then((data) => {
           that.nodes = JSON.parse(data);
@@ -233,6 +267,22 @@
           order: this.$refs[this.blockSelectList][0].list.length + 1,
           fixed: false,
         });
+      },
+      handleBlockEdit(block) {
+        console.log(block);
+        this.editBlockURL = `http://localhost:32861/node/${block.nid}/edit`;
+        this.editBlock = block;
+
+         // fetch(this.baseURL + '/api/node_layouts/blocks/4/edit')
+         //  .then((response) => response.text())
+         //  .then((data) => {
+         //    that.editBlockFormContent = data;
+         //  })
+         //  .catch((err) => {
+         //    console.log(err);
+         //  });
+
+        document.getElementById('nl-iframe').contentWindow.location.reload();
       },
       handleListUpdate(updatedlist) {
         this.finalLayout.regions[updatedlist.name]['references'] = updatedlist.references;
@@ -293,5 +343,10 @@
 
   .btn-primary {
     background: #0074bd;
+  }
+
+  #nl-iframe {
+    width: 95%;
+    height: 500px;
   }
 </style>

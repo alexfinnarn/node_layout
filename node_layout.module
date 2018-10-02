@@ -58,13 +58,6 @@ function node_layout_menu() {
     'type' => MENU_CALLBACK,
   );
 
-  $items['api/node_layouts/blocks/%/edit'] = array(
-    'page callback' => '_node_layouts_edit_block',
-    'access arguments' => 'access content',
-    'page arguments' => array(3),
-    'type' => MENU_CALLBACK,
-  );
-
   $items['admin/config/content/node-layout'] = array(
     'title' => 'Node Layout Settings',
     'description' => 'Configuration options for the Node Layout module',
@@ -245,14 +238,4 @@ function _node_layouts_listing() {
 
   backdrop_json_output(json_encode($results));
   exit();
-}
-
-function _node_layouts_edit_block($nid) {
-  module_load_include('inc', 'node', 'node.pages');
-
-  $node = node_load(4);
-  $form = node_page_edit($node);
-
-  print backdrop_render($form);
-  backdrop_exit();
 }

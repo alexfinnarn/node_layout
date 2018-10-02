@@ -60,11 +60,11 @@
     </div>
   </div>
   <!-- Modal -->
-  <div class="modal fade" id="exampleModal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
+  <div class="modal fade" id="editBlockModal" tabindex="-1" role="dialog" aria-labelledby="editBlockModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-lg" role="document">
       <div class="modal-content">
         <div class="modal-header">
-          <h5 class="modal-title" id="exampleModalLabel">
+          <h5 class="modal-title" id="editBlockModalLabel">
             Edit: {{ editBlock.name }}
           </h5>
           <button type="button" class="close" data-dismiss="modal" aria-label="Close">
@@ -101,7 +101,7 @@
         {{ element.type }}: {{element.name}}
         <div class="btn btn-primary nl-edit-button"
              data-toggle="modal"
-             data-target="#exampleModal"
+             data-target="#editBlockModal"
              @click="editItem(element)">Edit</div>
         <div class="btn btn-danger nl-remove-button" @click="removeItem(element.name)">Remove</div>
       </li>

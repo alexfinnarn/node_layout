@@ -68,19 +68,6 @@ function node_layout_edit_form($form = array(), &$form_state) {
 function node_layout_edit_form_submit(&$form, &$form_state) {
   $submitted_layout = json_decode($form_state['values']['_final_layout']);
 
-  // Remove other properties of references leaving only name.
-  $arr = (array) $submitted_layout->regions;
-
-  foreach(array_keys($arr) as $value) {
-    foreach($submitted_layout->regions->$value->references as $index => $value2) {
-      $submitted_layout->regions->$value->references[$index] = array(
-        'title' => $value2->name,
-        'nid' => $value2->nid,
-        'type' => $value2->type,
-      );
-    }
-  }
-
   if ($form_state['_layout'] !== FALSE) {
     $entity = entity_load('node_layout', $form_state['_layout']->id);
     $entity->data = serialize($submitted_layout);

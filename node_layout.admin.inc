@@ -49,7 +49,7 @@ function node_layout_edit_form($form = array(), &$form_state) {
 
   $form['node_layout'] = array(
     '#type' => 'fieldset',
-    '#title' => t('Node Layout'),
+//    '#title' => t('Node Layout'),
     '#collapsible' => FALSE,
   );
 

@@ -241,7 +241,14 @@
         // I think this is also the case since the lists are tracked within region
         // components but not within the main Vue instances.
         Object.keys(this.$refs).forEach((ref) => {
-          this.finalLayout.regions[ref]['references'] = this.$refs[ref][0].list;
+          // Remove Draggable info not needed to save node.
+          this.finalLayout.regions[ref]['references'] = this.$refs[ref][0].list.map((el) => {
+            return {
+              title: el.name,
+              nid: el.nid,
+              type: el.type,
+            };
+          });
         });
 
         // I don't know of a better way to sync the component state and the

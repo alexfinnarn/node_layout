@@ -1,16 +1,29 @@
-<div id="edit-layout-draggable-form">
-  <div id="add-block-form" class="row">
-    <div class="panel panel-default">
-      <div class="panel-heading">
-        <h3>Add Block</h3>
-      </div>
-      <div class="panel-body">
+<div id="edit-layout-draggable-form" class="container-fluid">
+  <h3 class="row">Add Block</h3>
+  <hr>
+  <div id="add-block-form row">
+    <div class="row">
+      <div class="col">
+        <label for="add-block-reference">Block Reference</label>
         <input type="text"
                name="add-block-reference"
                autocomplete="off"
+               class="form-control"
                @keyup.delete="hideResults"
                id="add-block-reference"
                v-model="blockReferenceTitle">
+        <div v-if="blockReferenceTitle.length >= 2 && hideBox === false">
+          <ul class="list-group">
+            <li @click="makeSelection(item)"
+                class="list-group-item"
+                v-for="item in filteredItems">
+              {{ item.type }}: {{ item.title }}
+            </li>
+          </ul>
+        </div>
+      </div>
+      <div class="col">
+        <label for="add-block-select-list">Region</label>
         <select name="add-block-select-list"
                 class="form-control"
                 v-model="blockSelectList"
@@ -20,25 +33,22 @@
             {{ region.name }}
           </option>
         </select>
+      </div>
+      <div class="col">
         <button @click.prevent="addBlockToRegion"
                 v-if="blockReference"
                 class="btn btn-primary">
           Add Block
         </button>
-        <div v-if="blockReferenceTitle.length >= 2 && hideBox === false">
-          <ul>
-            <li @click="makeSelection(item)" v-for="item in filteredItems">
-              {{ item.type }}: {{ item.title }}
-            </li>
-          </ul>
-        </div>
       </div>
     </div>
   </div>
+  <h3 class="row">Regions</h3>
+  <hr>
   <div class="row">
     <div v-for="region in layout.regions">
       <div class="col-md">
-        <h3>{{ region.name }}:</h3>
+        <h4>{{ region.name }}</h4>
 <!--        <pre>{{ region.references }}</pre>-->
         <region v-on:update-list="handleListUpdate"
                 :ref="region.name"
@@ -63,7 +73,8 @@
         <i :class="element.fixed? 'fa fa-anchor' : 'glyphicon glyphicon-pushpin'" @click=" element.fixed=! element.fixed" aria-hidden="true"></i>
         {{ element.type }}: {{element.name}}
 <!--        <span class="badge">{{element.order}}</span>-->
-        <span @click="removeItem(element.name)">XX</span>
+        <div class="btn btn-primary nl-edit-button" @click="editItem(element.name)">Edit</div>
+        <div class="btn btn-danger nl-remove-button" @click="removeItem(element.name)">Remove</div>
       </li>
     </transition-group>
   </draggable>
@@ -275,7 +286,12 @@
   .list-group-item {
     cursor: move;
   }
-  .list-group-item i {
+  
+  .nl-edit-button, .nl-remove-button {
     cursor: pointer;
+  }
+
+  .btn-primary {
+    background: #0074bd;
   }
 </style>

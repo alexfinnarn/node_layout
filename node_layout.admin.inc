@@ -21,6 +21,11 @@ function node_layout_edit_form($form = array(), &$form_state) {
   backdrop_add_js('https://cdn.jsdelivr.net/npm/sortablejs@1.7.0/Sortable.min.js', 'external');
   backdrop_add_js('https://cdnjs.cloudflare.com/ajax/libs/Vue.Draggable/2.15.0/vuedraggable.min.js', 'external');
 
+  backdrop_add_js('https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.3/umd/popper.min.js', 'external');
+  backdrop_add_js('https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/js/bootstrap.min.js', 'external');
+
+  backdrop_add_css('https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/css/bootstrap.min.css', 'external');
+
   // Include the base URL to use in fetching a node layout list later.
   global $base_url;
   backdrop_add_js(array(

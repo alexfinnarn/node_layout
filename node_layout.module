@@ -151,8 +151,6 @@ function node_layout_block_view($delta = '', $settings = array()) {
   $item = menu_get_item();
   if (strpos($delta, 'node_layout') !== -1 && $item['path'] === 'node/%') {
     $block['content'] = NULL;
-    $regions = node_layout_get_active_regions();
-
     $node = menu_get_object('node');
     $layout = node_layout_get_layout($node->nid);
 
@@ -160,12 +158,11 @@ function node_layout_block_view($delta = '', $settings = array()) {
       $region_name = explode('node_layout_', $delta)[1];
       $data = unserialize($layout->data);
       foreach ($data->regions->$region_name->references as $reference) {
-        if ($reference['nid']) {
-          $block['content'][] = node_view(node_load($reference['nid']));
+        if ($reference->nid) {
+          $block['content'][] = node_view(node_load($reference->nid));
         }
       }
 
-      // $block['subject'] = 'header block';
       return $block;
     }
   }
@@ -260,6 +257,14 @@ function node_layout_get_available_node_types() {
  * Returns a list of all nodes with type of hidden path.
  */
 function _node_layouts_listing() {
+  // Get query parameters.
+  $q = backdrop_get_query_parameters();
+
+  $nids = null;
+  if (isset($q['nids'])) {
+    $nids = json_decode($q['nids']);
+  }
+
   // Query node table based on hidden path settings.
   $enabled_types = array_filter(node_type_get_types(), function($val) {
     return $val->settings['hidden_path'];
@@ -269,7 +274,13 @@ function _node_layouts_listing() {
     return $val->type;
   }, $enabled_types);
 
-  $results = db_query('SELECT nid, title, type FROM {node} WHERE type IN (:types)', array(':types' => $types_names))->fetchAll();
+  if ($nids) {
+    $results = db_query('SELECT nid, title, type FROM {node} WHERE type IN (:types) AND nid IN (:ids)',
+      array(':types' => $types_names, ':ids' => $nids))->fetchAll();
+  } else {
+    $results = db_query('SELECT nid, title, type FROM {node} WHERE type IN (:types)',
+      array(':types' => $types_names))->fetchAll();
+  }
 
   backdrop_json_output(json_encode($results));
   exit();

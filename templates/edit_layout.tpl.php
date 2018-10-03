@@ -152,6 +152,7 @@
 <script type="text/javascript">
   const fooLayout = <?php print $data['encoded_layout']; ?>;
 
+  // @todo Remove debugging statement.
   <?php $foo = 'bar'; ?>
 
   jQuery(document).ready(function () {

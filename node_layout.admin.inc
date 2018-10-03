@@ -21,9 +21,9 @@ function node_layout_edit_form($form = array(), &$form_state) {
   backdrop_add_js('https://cdn.jsdelivr.net/npm/sortablejs@1.7.0/Sortable.min.js', 'external');
   backdrop_add_js('https://cdnjs.cloudflare.com/ajax/libs/Vue.Draggable/2.15.0/vuedraggable.min.js', 'external');
 
+  // Add Bootstrap for CSS and modal.
   backdrop_add_js('https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.3/umd/popper.min.js', 'external');
   backdrop_add_js('https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/js/bootstrap.min.js', 'external');
-
   backdrop_add_css('https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/css/bootstrap.min.css', 'external');
 
   // Include the base URL to use in fetching a node layout list later.
@@ -49,7 +49,7 @@ function node_layout_edit_form($form = array(), &$form_state) {
 
   $form['node_layout'] = array(
     '#type' => 'fieldset',
-//    '#title' => t('Node Layout'),
+    // '#title' => t('Node Layout'),
     '#collapsible' => FALSE,
   );
 
@@ -70,6 +70,13 @@ function node_layout_edit_form($form = array(), &$form_state) {
   return $form;
 }
 
+
+/**
+ * Submission function for saving node layout.
+ *
+ * @param $form
+ * @param $form_state
+ */
 function node_layout_edit_form_submit(&$form, &$form_state) {
   $submitted_layout = json_decode($form_state['values']['_final_layout']);
 
@@ -92,6 +99,15 @@ function node_layout_edit_form_submit(&$form, &$form_state) {
 }
 
 // @todo Refactor so that this function is included in generating a layout entity.
+/**
+ * Prepare the layout data with placeholders, if needed.
+ *
+ * @param $layout
+ * @param $regions
+ * @param $nid
+ *
+ * @return array
+ */
 function nl_edit_form_prepare_data($layout, $regions, $nid) {
   if ($layout === FALSE) {
     $layout->data = array(
@@ -123,6 +139,11 @@ function nl_edit_form_prepare_data($layout, $regions, $nid) {
   return $data;
 }
 
+/**
+ * Check whether the layout tab should show on the node/% paths.
+ *
+ * @return bool|null
+ */
 function node_layout_edit_access_callback() {
   // @todo Add user access check.
 
@@ -133,7 +154,14 @@ function node_layout_edit_access_callback() {
   }
 }
 
-
+/**
+ * Settings form for configuring the node layout module.
+ *
+ * @param array $form
+ * @param $form_state
+ *
+ * @return mixed|string
+ */
 function node_layout_settings_form($form = array(), &$form_state) {
   $form['#config'] = 'node_layout.settings';
   $config = config_get('node_layout.settings');

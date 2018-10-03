@@ -46,7 +46,7 @@ function node_layout_menu() {
     'description' => 'Edit Node Layout',
     'page callback' => 'backdrop_get_form',
     'page arguments' => array('node_layout_edit_form'),
-    //    'access arguments' => array('edit node layouts'),
+    // 'access arguments' => array('edit node layouts'),
     'access callback' => 'node_layout_edit_access_callback',
     'file' => 'node_layout.admin.inc',
     'type' => MENU_LOCAL_TASK,
@@ -141,7 +141,8 @@ function node_layout_block_info() {
  * Implements hook_block_view().
  */
 function node_layout_block_view($delta = '', $settings = array()) {
-  
+
+  // @todo Figure out why I had to add this?
   if (strpos(current_path(), '/admin/blocks/add')) {
     return;
   }
@@ -171,6 +172,8 @@ function node_layout_block_view($delta = '', $settings = array()) {
 /**
  * Gets the layout for the node in question.
  *
+ * @param $nid
+ *
  * @return array|bool|mixed|null
  */
 // @todo Refactor so that this function returns a node_layout entity.
@@ -189,7 +192,6 @@ function node_layout_get_layout($nid) {
 //      $layout = entity_create('node_layout', $values);
       $layout = false;
     }
-
   }
 
   return $layout;
@@ -207,7 +209,7 @@ function node_layout_get_active_regions(string $node_type = '') {
 
   // Get the node layout.
   // @todo Add to settings page.
-//  $node_layout = layout_load($config['active_layout']);
+  // $node_layout = layout_load($config['active_layout']);
 
   if ($node_type === '') {
     $node_types = array_filter(array_values(node_layout_get_available_node_types()), function($value) {

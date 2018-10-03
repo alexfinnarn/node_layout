@@ -69,6 +69,37 @@ function node_layout_menu() {
     'file' => 'node_layout.admin.inc',
   );
 
+  $items['admin/blocks/add'] = array(
+    'title' => 'Add Block',
+    'page callback' => 'et_add_page',
+    'file' => 'node_layout.pages.inc',
+    'access arguments' => array('administer node layout'),
+    'type' => MENU_NORMAL_ITEM,
+  );
+
+  // Need to add each hidden path content type to show up on add block page.
+  foreach (node_type_get_types() as $type) {
+
+    // If the hidden path setting is falsey, then don't add a menu item.
+    if (!$type->settings['hidden_path']) {
+      continue;
+    }
+
+    // This is taken from the node module's code for node/add/* meu paths.
+    $type_url_str = str_replace('_', '-', $type->type);
+    $items['admin/blocks/add/' . $type_url_str] = array(
+      'title' => $type->name,
+      'title callback' => 'check_plain',
+      'page callback' => 'node_add',
+      'page arguments' => array($type->type),
+      'access callback' => 'node_access',
+      'access arguments' => array('create', $type->type),
+      'description' => $type->description,
+      'file' => 'node.pages.inc',
+      'file path' => backdrop_get_path('module', 'node'),
+    );
+  }
+
   return $items;
 }
 
@@ -110,6 +141,10 @@ function node_layout_block_info() {
  * Implements hook_block_view().
  */
 function node_layout_block_view($delta = '', $settings = array()) {
+  
+  if (strpos(current_path(), '/admin/blocks/add')) {
+    return;
+  }
 
   // @todo Add better check for exclusion so that future calls won't run through
   // the logic if it is determined the layout isn't needed for the current route.
@@ -238,4 +273,15 @@ function _node_layouts_listing() {
 
   backdrop_json_output(json_encode($results));
   exit();
+}
+
+/**
+ * Implements hook_admin_paths().
+ */
+function node_layout_admin_paths() {
+//  return array(
+//    'node/*/layout' => TRUE,
+//    'admin/blocks/add' => TRUE,
+//    'admin/blocks/add/*' => TRUE,
+//  );
 }

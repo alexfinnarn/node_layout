@@ -75,7 +75,11 @@
           <h5 class="modal-title" id="editBlockModalLabel">
             Edit: {{ editBlock.name }}
           </h5>
-          <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <button type="button"
+                  class="close"
+                  @click.prevent="initialize"
+                  data-dismiss="modal"
+                  aria-label="Close">
             <span aria-hidden="true">&times;</span>
           </button>
         </div>
@@ -100,7 +104,11 @@
           <h5 class="modal-title" id="createBlockModalLabel">
             Create Block
           </h5>
-          <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <button type="button"
+                  class="close"
+                  @click.prevent="initialize"
+                  data-dismiss="modal"
+                  aria-label="Close">
             <span aria-hidden="true">&times;</span>
           </button>
         </div>
@@ -282,14 +290,17 @@
         // Grab the node references.
         let that = this;
 
-        let nodes = fetch(this.baseURL + '/api/node_layouts')
-        .then((response) => response.json())
-        .then((data) => {
-          that.nodes = JSON.parse(data);
-        })
-        .catch((err) => {
-          console.log(err);
-        });
+        fetch(this.baseURL + '/api/node_layouts')
+          .then((response) => response.json())
+          .then((data) => {
+            const nodes = JSON.parse(data);
+            that.nodes = nodes;
+          })
+          .catch((err) => {
+            console.log(err);
+          });
+
+        this.replaceTitles();
       },
       addBlockToRegion() {
         // @todo Add check for when the user doesn't select a choice.
@@ -338,6 +349,47 @@
         this.hideBox = false;
         this.blockReference = null;
       },
+      replaceTitles() {
+
+        // Get node IDs of current layout for updating the title.
+        // This prevents loading and looping through all the hidden path nodes.
+        let nids = [];
+        Object.keys(this.$refs).forEach((ref) => {
+          this.$refs[ref][0].list.forEach((el, index) => {
+            if (el.nid !== null) {
+              nids.push(el.nid);
+            }
+          });
+        });
+
+        let that = this;
+        fetch(this.baseURL + '/api/node_layouts?nids=[' + nids.join() + ']')
+          .then((response) => response.json())
+          .then((data) => {
+            const nodes = JSON.parse(data);
+
+            Object.keys(that.$refs).forEach((ref) => {
+              that.$refs[ref][0].list.forEach((el, index) => {
+
+                // Don't do anything for the placeholder.
+                if (el.nid === null) {
+                  return;
+                }
+
+                // Replace the name with the current one.
+                const currentNode = nodes.filter((item) => {
+                  return item.nid === el.nid;
+                });
+                that.$refs[ref][0].list[index].name = currentNode[0].title;
+              });
+            });
+          })
+          .catch((err) => {
+              console.log(err);
+          });
+
+
+      }
     },
   });
 </script>

@@ -293,8 +293,7 @@
         fetch(this.baseURL + '/api/node_layouts')
           .then((response) => response.json())
           .then((data) => {
-            const nodes = JSON.parse(data);
-            that.nodes = nodes;
+            that.nodes = JSON.parse(data);
           })
           .catch((err) => {
             console.log(err);
@@ -350,7 +349,6 @@
         this.blockReference = null;
       },
       replaceTitles() {
-
         // Get node IDs of current layout for updating the title.
         // This prevents loading and looping through all the hidden path nodes.
         let nids = [];
@@ -370,7 +368,6 @@
 
             Object.keys(that.$refs).forEach((ref) => {
               that.$refs[ref][0].list.forEach((el, index) => {
-
                 // Don't do anything for the placeholder.
                 if (el.nid === null) {
                   return;
@@ -387,8 +384,6 @@
           .catch((err) => {
               console.log(err);
           });
-
-
       }
     },
   });

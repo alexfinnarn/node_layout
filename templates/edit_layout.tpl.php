@@ -43,6 +43,14 @@
       </div>
     </div>
   </div>
+  <div class="row">
+    <button @click.prevent="createBlock"
+            data-toggle="modal"
+            class="btn btn-primary"
+            data-target="#createBlockModal">
+      Create Block
+    </button>
+  </div>
   <h3 class="row">Regions</h3>
   <hr>
   <div class="row">
@@ -72,7 +80,6 @@
           </button>
         </div>
         <div class="modal-body">
-<!--          <span v-html="editBlockFormContent"></span>-->
           <iframe id="nl-iframe"
                   :src="editBlockURL"
                   frameborder="0">
@@ -82,6 +89,31 @@
 <!--          <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>-->
 <!--          <button type="button" class="btn btn-primary">Save changes</button>-->
 <!--        </div>-->
+      </div>
+    </div>
+  </div>
+  <!-- Modal -->
+  <div class="modal fade" id="createBlockModal" tabindex="-1" role="dialog" aria-labelledby="createBlockModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg" role="document">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="createBlockModalLabel">
+            Create Block
+          </h5>
+          <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+          </button>
+        </div>
+        <div class="modal-body">
+          <iframe id="nl-iframe"
+                  :src="createBlockURL"
+                  frameborder="0">
+          </iframe>
+        </div>
+        <!--        <div class="modal-footer">-->
+        <!--          <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>-->
+        <!--          <button type="button" class="btn btn-primary">Save changes</button>-->
+        <!--        </div>-->
       </div>
     </div>
   </div>
@@ -230,6 +262,7 @@
         blockReferenceTitle: '',
         blockSelectList: 'top',
         editBlock: {},
+        createBlockURL: Backdrop.settings.node_layout.baseURL + '/admin/blocks/add',
         editBlockURL: this.baseURL,
         layout: fooLayout,
         finalLayout: fooLayout,

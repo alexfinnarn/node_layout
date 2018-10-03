@@ -25,7 +25,8 @@ In Drupal 7, I was able to have a layout per node that I could edit via "node/%/
 
 <img width="1147" alt="screen shot 2018-10-03 at 3 46 53 pm" src="https://user-images.githubusercontent.com/3640707/46443747-acb31380-c723-11e8-84c0-e5310e96240e.png">
 
-5. Create a node that has the node layout functionality enabled and go to the `node/%/layout` path to create your node layout.
+6. Create some content with the "hidden path" content type so you cna use it in the layout tool.
+7. Create a node that has the node layout functionality enabled and go to the `node/%/layout` path to create your node layout.
 
 <img width="1018" alt="screen shot 2018-10-03 at 3 48 24 pm" src="https://user-images.githubusercontent.com/3640707/46443784-cf452c80-c723-11e8-949a-08a781970fbb.png">
 

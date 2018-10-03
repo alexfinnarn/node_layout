@@ -287,9 +287,9 @@
     },
     methods: {
       initialize() {
-        // Grab the node references.
         let that = this;
 
+        // Grab the node references for the select list.
         fetch(this.baseURL + '/api/node_layouts')
           .then((response) => response.json())
           .then((data) => {
@@ -299,7 +299,12 @@
             console.log(err);
           });
 
+        // The saved block titles may have changed so check on that.
         this.replaceTitles();
+
+        // Add the current layout to the hidden form value.
+        // @todo This should be done on the form load.
+        jQuery('input[name="_final_layout"]').val(JSON.stringify(this.layout));
       },
       addBlockToRegion() {
         // @todo Add check for when the user doesn't select a choice.
